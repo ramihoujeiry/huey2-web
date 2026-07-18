@@ -143,7 +143,7 @@
     <button class="tab-btn" :class="{active:tab==='CV'}"  @click="tab='CV'">Convert</button>
     <button class="tab-btn" :class="{active:tab==='START'}" @click="tab='START'">Startup</button>
     <button class="tab-btn" :class="{active:tab==='EM'}"  @click="tab='EM'">Emergency</button>
-    <button class="tab-btn" :class="{active:tab==='SOP'}" @click="tab='SOP'">SQN XII SOP</button>
+    <button class="tab-btn" :class="{active:tab==='SOP'}" @click="tab='SOP'">SOP</button>
     <button class="tab-btn" :class="{active:tab==='LIM'}" @click="tab='LIM'">Limits</button>
   </nav>
 
@@ -425,7 +425,7 @@
   <!-- ================= SQN XII SOP ================= -->
   <section id="sec-sop" v-show="tab==='SOP'">
     <div class="card" v-if="!sopSel">
-      <h2>SQN XII SOP</h2>
+      <h2>SOP</h2>
       <p class="sub">SQN XII SOP Training Guide — the search above also covers Emergency procedures.</p>
       <div class="field">
         <label>Search all procedures</label>
@@ -498,6 +498,7 @@
         </ol>
         <div class="complete-banner" v-if="phaseIsComplete(currentPhase.id)">✓ {{ currentPhase.title }} complete</div>
         <button class="btn ghost" v-if="doneCount>0" @click="resetChecks">Reset checklist</button>
+        <button class="btn ghost" @click="phaseSel=null">‹ All phases</button>
       </div>
     </div>
   </section>
