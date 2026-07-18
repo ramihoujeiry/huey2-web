@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#1c1f26" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<title>HUEY2 — UH-1 Performance & Balance</title>
+<style>
+  :root{
+    --bg:#1c1f26; --panel:#252a33; --panel2:#2e343f; --ink:#e8ecf1; --muted:#9aa4b2;
+    --accent:#4b5320; --accent2:#6b7530; --blue:#4ea1ff; --orange:#f25b00; --red:#ff4d4d;
+    --green:#2a623d; --line:#3a414e; --err:#ffb3b3; --errbg:#3a2020;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:16px;line-height:1.4}
+  .wrap{max-width:760px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 12px) 12px calc(env(safe-area-inset-bottom) + 24px)}
+  header.app{text-align:center;margin-bottom:10px}
+  header.app h1{font-size:1.25rem;margin:0;letter-spacing:.5px}
+  header.app p{margin:2px 0 0;color:var(--muted);font-size:.72rem}
+
+  /* Tab bar */
+  .tabs{position:sticky;top:0;z-index:10;display:flex;gap:4px;background:var(--bg);
+    padding:6px 0 8px;border-bottom:1px solid var(--line)}
+  .tab-btn{flex:1;padding:10px 4px;border:1px solid var(--line);border-radius:10px;
+    background:var(--panel);color:var(--muted);font-weight:600;font-size:.82rem;cursor:pointer;
+    transition:.15s}
+  .tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent2)}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:14px;margin:14px 0}
+  .card h2{font-size:1.05rem;margin:0 0 2px}
+  .card h3{font-size:.95rem;margin:14px 0 8px;color:var(--accent2)}
+  .card .sub{color:var(--muted);font-size:.7rem;margin:0 0 10px}
+  hr{border:0;border-top:1px dashed var(--accent2);margin:18px 0}
+
+  .field{margin:10px 0}
+  .field > label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:4px}
+  input[type=number],select{width:100%;padding:12px;font-size:1rem;border-radius:10px;
+    border:1px solid var(--line);background:var(--panel2);color:var(--ink);appearance:none}
+  input[type=number]:focus,select:focus{outline:2px solid var(--accent2)}
+  .row{display:flex;gap:8px}
+  .row > *{flex:1}
+  .row .unit{display:flex;align-items:center;gap:6px}
+  .row .unit select{flex:0 0 92px}
+
+  .result{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;margin:8px 0}
+  .result .lab{font-size:.72rem;color:var(--muted)}
+  .result .val{font-size:1.25rem;font-weight:700;color:var(--blue)}
+  .result .val.warn{color:var(--orange)}
+  .result .val.danger{color:var(--red)}
+  .result .val.good{color:#5fd08a}
+
+  .btn{display:inline-block;width:100%;padding:13px;border:0;border-radius:10px;
+    background:var(--accent);color:#fff;font-weight:700;font-size:.95rem;cursor:pointer;margin-top:8px}
+  .btn.ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+
+  .ff{display:flex;gap:8px}
+  .ff .btn{margin-top:0}
+  .info{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+    padding:12px;font-size:.8rem;color:var(--muted)}
+  .info p{margin:3px 0}
+
+  .err{background:var(--errbg);color:var(--err);border:1px solid #5a2a2a;
+    border-radius:10px;padding:8px 12px;font-size:.82rem;margin:8px 0}
+  .warn-banner{background:#3a2a10;color:#ffd28a;border:1px solid #5a4420;
+    border-radius:10px;padding:10px 12px;font-weight:700;margin:6px 0}
+  .muted{color:var(--muted);font-size:.72rem}
+  footer{text-align:center;color:var(--muted);font-size:.65rem;margin-top:18px;line-height:1.5}
+</style>
+</head>
+<body>
+<div id="app" class="wrap">
+  <header class="app">
+    <h1>HUEY2 · UH-1 PERFORMANCE &amp; BALANCE</h1>
+    <p>BHT PUB-92-004-10 / Rev 10 (21 Aug 2017) · Revised May 2023</p>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn" :class="{active:tab==='PPC'}" @click="tab='PPC'">PPC</button>
+    <button class="tab-btn" :class="{active:tab==='PA'}"  @click="tab='PA'">Power</button>
+    <button class="tab-btn" :class="{active:tab==='CG'}"  @click="tab='CG'">W&amp;B / Fuel</button>
+    <button class="tab-btn" :class="{active:tab==='CV'}"  @click="tab='CV'">Convert</button>
+  </nav>
+
+  <!-- ================= PPC ================= -->
+  <section v-show="tab==='PPC'">
+    <div class="card">
+      <h2>PPC — Performance &amp; Power Chart</h2>
+      <p class="sub">Predicted hover torque vs gross weight, pressure altitude, temp.</p>
+
+      <div class="ff">
+        <button class="btn" @click="setFire(70)">70% Bambi (2500 lb)</button>
+        <button class="btn" @click="setFire(100)">100% Bambi (3500 lb)</button>
+      </div>
+
+      <div class="field">
+        <label>Aircraft number</label>
+        <select v-model="ppc.ac" @change="onAc('ppc')">
+          <option value="">Select</option>
+          <option v-for="(d,k) in AC" :key="k" :value="k">{{k}}</option>
+        </select>
+      </div>
+
+      <div class="result"><div class="lab">A/C basic weight (lbs)</div><div class="val">{{ ppc.basic || '—' }}</div></div>
+
+      <div class="field">
+        <label>Fuel (lbs)</label>
+        <input type="number" v-model.number="ppc.fuel" @input="ppcCalc" />
+      </div>
+      <div class="err" v-if="ppc.fuelErr">{{ ppc.fuelErr }}</div>
+
+      <div class="field">
+        <label>Load</label>
+        <div class="row">
+          <input type="number" v-model.number="ppc.load" @input="ppcCalc" />
+          <div class="unit">
+            <select v-model="ppc.loadUnit" @change="ppcCalc">
+              <option value="lbs">lbs</option><option value="kg">kg</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="result"><div class="lab">Take-off gross weight (lbs)</div>
+        <div class="val" :class="{warn:ppc.togw>10500}">{{ ppc.togw || '—' }}</div></div>
+      <div class="err" v-if="ppc.togwErr">{{ ppc.togwErr }}</div>
+
+      <div class="field">
+        <label>QNH</label>
+        <div class="row">
+          <input type="number" v-model.number="ppc.qnh" @input="ppcAlt" />
+          <div class="unit"><select v-model="ppc.qnhUnit" @change="ppcAlt">
+            <option value="hPa">hPa</option><option value="inHg">inHg</option></select></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>FAT (°C)</label>
+        <input type="number" v-model.number="ppc.fat" @input="ppcTemp" />
+      </div>
+      <div class="err" v-if="ppc.tempErr">{{ ppc.tempErr }}</div>
+
+      <div class="field">
+        <label>Indicated altitude (ft)</label>
+        <input type="number" v-model.number="ppc.ia" @input="ppcAlt" />
+      </div>
+      <div class="err" v-if="ppc.iaErr">{{ ppc.iaErr }}</div>
+
+      <div class="result"><div class="lab">Pressure altitude (ft)</div><div class="val">{{ ppc.pa || '—' }}</div></div>
+      <div class="result"><div class="lab">Density altitude (ft)</div><div class="val">{{ ppc.da || '—' }}</div></div>
+
+      <div class="result"><div class="lab">Max TQ available (Fig 7-2)</div><div class="val">{{ ppc.maxTQ ?? '—' }}</div></div>
+      <div class="result"><div class="lab">Predicted hover TQ @ 2 ft (Fig 7-3)</div>
+        <div class="val" :class="{danger:ppc.tq2>100}">{{ ppc.tq2 ?? '—' }}</div></div>
+      <div class="result"><div class="lab">Predicted hover TQ @ 4 ft (Fig 7-3)</div>
+        <div class="val" :class="{danger:ppc.tq4>100}">{{ ppc.tq4 ?? '—' }}</div></div>
+      <div class="result"><div class="lab">Predicted hover TQ @ 30 ft (Fig 7-3)</div>
+        <div class="val" :class="{danger:ppc.tq30>100}">{{ ppc.tq30 ?? '—' }}</div></div>
+      <div class="result"><div class="lab">Predicted hover TQ @ 100 ft (Fig 7-3)</div>
+        <div class="val" :class="{danger:ppc.tq100>100}">{{ ppc.tq100 ?? '—' }}</div></div>
+
+      <button class="btn ghost" @click="ppcReset">Reset</button>
+
+      <div class="info" v-if="ppc.fire">
+        <p>Bambi bucket empty weight: 167 lbs.</p>
+        <p v-if="ppc.bucket===70">70% Bambi capacity = 2500 lbs.</p>
+        <p v-if="ppc.bucket===100">100% Bambi capacity = 3500 lbs.</p>
+        <p>Control head weight = 17.6 lbs.</p>
+        <p>Cockpit doors removed = −2×23 = −46 lbs.</p>
+        <p>Crew of 3 = 3×200 = 600 lbs.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= POWER ASSURANCE ================= -->
+  <section v-show="tab==='PA'">
+    <div class="card">
+      <h2>Power Assurance</h2>
+      <p class="sub">Minimum required torque vs actual measured torque.</p>
+
+      <div class="field">
+        <label>QNH</label>
+        <div class="row">
+          <input type="number" v-model.number="pa.qnh" @input="paAlt" />
+          <div class="unit"><select v-model="pa.qnhUnit" @change="paAlt">
+            <option value="hPa">hPa</option><option value="inHg">inHg</option></select></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>FAT (°C)</label>
+        <input type="number" v-model.number="pa.fat" @input="paTemp" />
+      </div>
+      <div class="err" v-if="pa.tempErr">{{ pa.tempErr }}</div>
+
+      <div class="field">
+        <label>Indicated altitude (ft)</label>
+        <input type="number" v-model.number="pa.ia" @input="paAlt" />
+      </div>
+      <div class="err" v-if="pa.iaErr">{{ pa.iaErr }}</div>
+
+      <div class="result"><div class="lab">Pressure altitude (ft)</div><div class="val">{{ pa.pa || '—' }}</div></div>
+
+      <div class="field">
+        <label>MGT</label>
+        <input type="number" v-model.number="pa.mgt" @input="paMgt" />
+      </div>
+      <div class="err" v-if="pa.mgtErr">{{ pa.mgtErr }}</div>
+
+      <div class="field">
+        <label>Actual torque (measured)</label>
+        <input type="number" v-model.number="pa.actual" @input="paDiff" />
+      </div>
+
+      <div class="result"><div class="lab">Minimum required torque</div><div class="val">{{ pa.mrt ?? '—' }}</div></div>
+      <div class="result"><div class="lab">Difference (actual − required)</div>
+        <div class="val" :class="{danger:pa.diff<0, good:pa.diff>=0}">{{ pa.diff ?? '—' }}</div></div>
+      <div class="warn-banner" v-if="pa.warn">{{ pa.warn }}</div>
+    </div>
+  </section>
+
+  <!-- ================= CG / W&B / FUEL ================= -->
+  <section v-show="tab==='CG'">
+    <div class="card">
+      <h2>Weight &amp; Balance</h2>
+      <p class="sub">Moment &amp; weight last updated 30/1/2023</p>
+
+      <div class="field">
+        <label>Aircraft number</label>
+        <select v-model="cg.ac" @change="cgUpdate">
+          <option value="">Select</option>
+          <option v-for="(d,k) in AC" :key="k" :value="k">{{k}}</option>
+        </select>
+      </div>
+      <div class="result"><div class="lab">A/C basic weight (lbs)</div><div class="val">{{ cg.basic || '—' }}</div></div>
+      <div class="result"><div class="lab">A/C basic moment</div><div class="val">{{ cg.moment || '—' }}</div></div>
+
+      <div class="field">
+        <label>Fuel weight (lbs)</label>
+        <input type="number" v-model.number="cg.fuel" @input="cgCalc" />
+      </div>
+      <div class="field">
+        <label>Pilot 1 weight</label>
+        <div class="row">
+          <input type="number" v-model.number="cg.p1" @input="cgCalc" />
+          <div class="unit"><select v-model="cg.p1u" @change="cgCalc"><option value="lbs">lbs</option><option value="Kg">Kg</option></select></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Pilot 2 weight</label>
+        <div class="row">
+          <input type="number" v-model.number="cg.p2" @input="cgCalc" />
+          <div class="unit"><select v-model="cg.p2u" @change="cgCalc"><option value="lbs">lbs</option><option value="Kg">Kg</option></select></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Crew chief weight</label>
+        <div class="row">
+          <input type="number" v-model.number="cg.px" @input="cgCalc" />
+          <div class="unit"><select v-model="cg.pxu" @change="cgCalc"><option value="lbs">lbs</option><option value="Kg">Kg</option></select></div>
+        </div>
+      </div>
+
+      <div class="result"><div class="lab">Total weight (lbs)</div><div class="val">{{ cg.tw || '—' }}</div></div>
+      <div class="result"><div class="lab">Total moment</div><div class="val">{{ cg.tm || '—' }}</div></div>
+      <div class="result"><div class="lab">Calculated longitudinal CG</div><div class="val" :style="{color:'#f25b00'}">{{ cg.cg || '—' }}</div></div>
+    </div>
+
+    <div class="card">
+      <h3>Minimum fuel target optimization</h3>
+      <div class="field">
+        <label>Desired CG target</label>
+        <input type="number" step="0.01" v-model.number="cg.tgt" @input="cgMin" />
+      </div>
+      <div class="field">
+        <label>Pilot 1 weight</label>
+        <div class="row">
+          <input type="number" v-model.number="cg.m1" @input="cgMin" />
+          <div class="unit"><select v-model="cg.m1u" @change="cgMin"><option value="lbs">lbs</option><option value="Kg">Kg</option></select></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Pilot 2 weight</label>
+        <div class="row">
+          <input type="number" v-model.number="cg.m2" @input="cgMin" />
+          <div class="unit"><select v-model="cg.m2u" @change="cgMin"><option value="lbs">lbs</option><option value="Kg">Kg</option></select></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Crew chief weight</label>
+        <div class="row">
+          <input type="number" v-model.number="cg.mx" @input="cgMin" />
+          <div class="unit"><select v-model="cg.mxu" @change="cgMin"><option value="lbs">lbs</option><option value="Kg">Kg</option></select></div>
+        </div>
+      </div>
+      <div class="result"><div class="lab">Maximum allowed fuel weight</div>
+        <div class="val" :style="{color:'#2a623d'}">{{ cg.minFuel || '—' }}</div></div>
+    </div>
+  </section>
+
+  <!-- ================= CONVERTER ================= -->
+  <section v-show="tab==='CV'">
+    <div class="card">
+      <h2>Pressure unit converter</h2>
+      <div class="field">
+        <label>From</label>
+        <select v-model="cv.from" @change="cvConvert">
+          <option value="hPa">millibar, hPa</option><option value="inHg">inHg</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>To</label>
+        <div class="muted">{{ cv.from==='hPa' ? 'inHg' : 'millibar, hPa' }}</div>
+      </div>
+      <div class="field">
+        <label>Input value</label>
+        <input type="number" v-model.number="cv.in" @input="cvConvert" />
+      </div>
+      <div class="result"><div class="lab">Converted value</div>
+        <div class="val">{{ cv.out || '—' }}</div></div>
+    </div>
+  </section>
+
+  <footer>
+    For planning reference only. Always cross-check against the current aircraft flight manual and
+    your unit's approved performance data before flight. Not a substitute for official publications.
+  </footer>
+</div>
+
+<script src="vue.global.prod.js"></script>
+<script>
+/* ===== Aircraft data (HUEY2) ===== */
+const HUEY_AIRCRAFT_DATA = {
+ "L1201":{weight:5682,moment:836039},"L1202":{weight:5807,moment:841200},"L1203":{weight:5660,moment:827487},
+ "L1204":{weight:5652,moment:833588},"L1205":{weight:5787,moment:849900},"L1206":{weight:5736,moment:832900},
+ "L1207":{weight:5791,moment:840600},"L1208":{weight:5803,moment:840600},"L1209":{weight:5769,moment:836700},
+ "L1210":{weight:5764,moment:840270.11},"L1211":{weight:5691,moment:831706.71},"L1212":{weight:5738,moment:833869.69},
+ "L1214":{weight:5748,moment:835441},"L1215":{weight:5740,moment:835996},"L1216":{weight:5756,moment:836234},
+ "L-1001":{weight:5505,moment:792700},"L-1004":{weight:5534,moment:797400},"L-1007":{weight:5549,moment:797600},
+ "L-1009":{weight:5616,moment:815600},"L-1010":{weight:5644,moment:810600},"L-1011":{weight:5412,moment:778300},
+ "L-1012":{weight:5634,moment:808900},"L-1102":{weight:5494,moment:799100},"L-1105":{weight:5518,moment:790200},
+ "L-1107":{weight:5556,moment:801400},"L-1109":{weight:5553,moment:799000},"L-1111":{weight:5490,moment:787500},
+ "L-1112":{weight:5629,moment:807900}
+};
+
+/* ===== Engines (verbatim formulas from the repo) ===== */
+const PPCEngine = {
+  Fat0(f){return 0.0095*f*f-2.1571*f+166.05;},
+  Fat2000(f){return -0.00074786*f*f*f+0.10096154*f*f-5.72457265*f+204.30769231;},
+  Fat4000(f){return -0.00017721*f*f*f+0.01506658*f*f-1.47211474*f+128.53679353;},
+  Fat6000(f){return 0.0000101*f*f*f-0.00277056*f*f-0.81259019*f+112.78571429;},
+  Fat8000(f){return -0.00005439*f*f*f+0.00251748*f*f-0.83150738*f+104.1;},
+  Fat10000(f){return 0.00000668*f*f*f*f-0.00041017*f*f*f-0.00270513*f*f-0.39245176*f+93.94326262;},
+  Fat12000(f){return 0.00000867*f*f*f*f-0.0005301*f*f*f-0.00275058*f*f-0.29468669*f+86.69107363;},
+  Fat14000(f){return 0.00000629*f*f*f*f-0.00037949*f*f*f-0.00326224*f*f-0.31544789*f+80.16723277;},
+  calculateMaxTQ(pa,fat){
+    const N3=parseFloat(pa);
+    const f0=this.Fat0(fat),f2000=this.Fat2000(fat),f4000=this.Fat4000(fat),f6000=this.Fat6000(fat),
+          f8000=this.Fat8000(fat),f10000=this.Fat10000(fat),f12000=this.Fat12000(fat),f14000=this.Fat14000(fat);
+    let m=null;
+    if(N3>=0&&N3<2000)m=f0-(f0-f2000)*(N3/2000);
+    else if(N3>=2000&&N3<4000)m=f2000-((f2000-f4000)*(N3-2000))/2000;
+    else if(N3>=4000&&N3<6000)m=f4000-((f4000-f6000)*(N3-4000))/2000;
+    else if(N3>=6000&&N3<8000)m=f6000-((f6000-f8000)*(N3-6000))/2000;
+    else if(N3>=8000&&N3<10000)m=f8000-((f8000-f10000)*(N3-8000))/2000;
+    else if(N3>=10000&&N3<12000)m=f10000-((f10000-f12000)*(N3-10000))/2000;
+    else if(N3>=12000&&N3<14000)m=f12000-((f12000-f14000)*(N3-12000))/2000;
+    else if(N3===14000)m=f14000;
+    return m!==null?Math.min(m,100).toFixed(1):null;
+  },
+  calculateVirtualX(pa,fat){
+    const PA=parseFloat(pa);
+    const E2=0.0028*PA+1,E5=0.0025*PA+7,E8=0.0026*PA+11,E11=0.0025*PA+16,E14=0.0025*PA+20;
+    if(fat>=-20&&fat<0)return E2+(E5-E2)*((fat+20)/20);
+    else if(fat>=0&&fat<20)return E5+(E8-E5)*(fat/20);
+    else if(fat>=20&&fat<40)return E8+(E11-E8)*((fat-20)/20);
+    else if(fat>=40&&fat<60)return E11+(E14-E11)*((fat-40)/20);
+    return null;
+  },
+  VX7500(g){return 0.00000455*g*g*g*g-0.00036092*g*g*g+0.01598776*g*g-0.12107615*g+21.29166667;},
+  VX8000(g){return 0.00016301*g*g*g-0.00416084*g*g+0.25360528*g+23.74666667;},
+  VX8500(g){return 0.00017172*g*g*g-0.0019697*g*g+0.22979798*g+28.83333333;},
+  VX9000(g){return 0.0008101*g*g*g-0.0372987*g*g+0.85134921*g+31.17142857;},
+  VX9500(g){return 0.00005*g*g*g*g-0.00336869*g*g*g+0.08238636*g*g-0.39045815*g+40.33928571;},
+  VX10000(g){return 0.00088889*g*g*g-0.03095238*g*g+0.78730159*g+42.10714286;},
+  VX10500(g){return 0.001044*g*g*g-0.027711*g*g+0.715536*g+48.007464;},
+  VX11000(g){return 0.00099*g*g*g-0.009714*g*g+0.372381*g+55.257143;},
+  VX11200(g){return 0.02*g*g+0.2*g+58;},
+  calculateVirtualY(gw,gX){
+    if(!gX)return null;
+    const O3=parseFloat(gw);
+    const H2=this.VX7500(gX),H5=this.VX8000(gX),H8=this.VX8500(gX),H11=this.VX9000(gX),H14=this.VX9500(gX),
+          H17=this.VX10000(gX),H20=this.VX10500(gX),H23=this.VX11000(gX),H26=this.VX11200(gX);
+    if(O3>=7500&&O3<8000)return H2+(H5-H2)*((O3-7500)/500);
+    else if(O3>=8000&&O3<8500)return H5+(H8-H5)*((O3-8000)/500);
+    else if(O3>=8500&&O3<9000)return H8+(H11-H8)*((O3-8500)/500);
+    else if(O3>=9000&&O3<9500)return H11+(H14-H11)*((O3-9000)/500);
+    else if(O3>=9500&&O3<10000)return H14+(H17-H14)*((O3-9500)/500);
+    else if(O3>=10000&&O3<10500)return H17+(H20-H17)*((O3-10000)/500);
+    else if(O3>=10500&&O3<11000)return H20+(H23-H20)*((O3-10500)/500);
+    else if(O3>=11000&&O3<11200)return H23+(H26-H23)*((O3-11000)/200);
+    else if(O3===11200)return H26;
+    return null;
+  }
+};
+const PAEngine = {
+  F10(m){return -0.000002176*m*m*m+0.004704132*m*m-2.942152186*m+531.135914195;},
+  F0(m){return -0.000004342*m*m*m+0.009725196*m*m-6.815988615*m+1513.83290876;},
+  F15(m){return -0.000003449*m*m*m+0.007848524*m*m-5.516750478*m+1212.264525819;},
+  F20(m){return -0.000001284*m*m*m+0.002978302*m*m-1.887290123*m+310.539950484;},
+  F25(m){return -0.000004668*m*m*m+0.010934662*m*m-8.10533222*m+1920.086763982;},
+  F30(m){return -0.000003648*m*m*m+0.008790669*m*m-6.642401446*m+1593.317837745;},
+  F35(m){return -0.000007062*m*m*m+0.016841555*m*m-12.964059332*m+3240.446679491;},
+  F40(m){return -0.000004601*m*m*m+0.011281935*m*m-8.813101951*m+2211.320364814;},
+  F45(m){return -0.00000387*m*m*m+0.009691694*m*m-7.69374242*m+1953.136257021;},
+  F50(m){return -0.00000523*m*m*m+0.013030312*m*m-10.438476141*m+2702.77433028;},
+  calX(fat,mgt){
+    const B=parseFloat(fat);
+    const D3=this.F10(mgt),D6=this.F0(mgt),D9=this.F0(mgt),D12=this.F15(mgt),D15=this.F20(mgt),
+          D18=this.F25(mgt),D21=this.F30(mgt),D24=this.F35(mgt),D27=this.F40(mgt),D30=this.F45(mgt),D33=this.F50(mgt);
+    if(B>=-10&&B<0)return D3+(D6-D3)*((B+10)/10);
+    else if(B>=0&&B<10)return D6+(D9-D6)*(B/10);
+    else if(B>=10&&B<15)return D9+(D12-D9)*((B-10)/5);
+    else if(B>=15&&B<20)return D12+(D15-D12)*((B-15)/5);
+    else if(B>=20&&B<25)return D15+(D18-D15)*((B-20)/5);
+    else if(B>=25&&B<30)return D18+(D21-D18)*((B-25)/5);
+    else if(B>=30&&B<35)return D21+(D24-D21)*((B-30)/5);
+    else if(B>=35&&B<40)return D24+(D27-D24)*((B-35)/5);
+    else if(B>=40&&B<45)return D27+(D30-D27)*((B-40)/5);
+    else if(B>=45&&B<50)return D30+(D33-D30)*((B-45)/5);
+    return null;
+  },
+  calMRT(pa,vX){
+    if(vX===null)return null;
+    const A=parseFloat(pa);
+    const J3=1.0459*vX+41.368,J6=0.9524*vX+39.04,J9=0.9132*vX+38.261,J12=0.9013*vX+35.954,
+          J15=0.8669*vX+34.395,J18=0.8173*vX+33.637,J21=0.8*vX+32,J24=0.7686*vX+30.841,
+          J27=0.74*vX+29.705,J30=0.7143*vX+28.571,J33=0.6813*vX+27.738;
+    if(A>=0&&A<1000)return J3+(J6-J3)*(A/1000);
+    else if(A>=1000&&A<2000)return J6+(J9-J6)*((A-1000)/1000);
+    else if(A>=2000&&A<3000)return J9+(J12-J9)*((A-2000)/1000);
+    else if(A>=3000&&A<4000)return J12+(J15-J12)*((A-3000)/1000);
+    else if(A>=4000&&A<5000)return J15+(J18-J15)*((A-4000)/1000);
+    else if(A>=5000&&A<6000)return J18+(J21-J18)*((A-5000)/1000);
+    else if(A>=6000&&A<7000)return J21+(J24-J21)*((A-6000)/1000);
+    else if(A>=7000&&A<8000)return J24+(J27-J24)*((A-7000)/1000);
+    else if(A>=8000&&A<9000)return J27+(J30-J27)*((A-8000)/1000);
+    else if(A>=9000&&A<=10000)return J30+(J33-J30)*((A-9000)/1000);
+    return null;
+  }
+};
+const CGEngine = {
+  getW(v,u){const x=parseFloat(v)||0;return u==="Kg"?x*2.204623:x;},
+  fuelMoment(fw){
+    let c=Math.max(10,Math.min(1420,fw));
+    if(c>=68&&c<=544)return -0.0163778627*c*c+134.2851074737*c+1273.6328075858;
+    else if(c>544&&c<=1420)return 169.06*c-22291;
+    return 0;
+  },
+  minFuel(w0,m0,t,w1,w2,wx){
+    const We=w0+w1+w2+wx, Me=m0+(w1*46.7)+(w2*46.7)+(wx*85);
+    const alpha=Me-t*We, a=-0.0163778627,b=134.2851074737,c=1273.6328075858;
+    const E1=b-t, Cq=alpha+c, delta=E1*E1-4*a*Cq;
+    const sol=[];
+    if(delta>=0){const x1=(-E1-Math.sqrt(delta))/(2*a),x2=(-E1+Math.sqrt(delta))/(2*a);
+      if(x1>=68&&x1<=544)sol.push(x1); if(x2>=68&&x2<=544)sol.push(x2);}
+    const a2=169.06,b2=-22291;
+    if(t!==a2){const x3=(alpha+b2)/(t-a2); if(x3>544)sol.push(x3);}
+    if(sol.length>0){let f=Math.max(...sol);
+      if(f>1420)return "1420 lbs (Note: CG already above 140 — could start autorotation)";
+      f=Math.max(10,f); return f.toFixed(0)+" lbs";}
+    return "1420 lbs (Note: CG already above 140 — could start autorotation)";
+  }
+};
+const ConverterEngine = {
+  hPaToInHg(h){return (parseFloat(h)*0.02953).toFixed(2);},
+  inHgToHPa(i){return (parseFloat(i)/0.02953).toFixed(2);}
+};
+
+/* ===== Vue app ===== */
+const app = Vue.createApp({
+  data(){
+    return {
+      tab:'PPC',
+      AC:HUEY_AIRCRAFT_DATA,
+      ppc:{ac:'',basic:null,fuel:1400,load:600,loadUnit:'lbs',togw:null,unrounded:0,qnh:29.92,qnhUnit:'inHg',
+           fat:20,ia:null,pa:null,da:null,maxTQ:null,tq2:null,tq4:null,tq30:null,tq100:null,
+           fire:false,bucket:null,fuelErr:'',togwErr:'',tempErr:'',iaErr:''},
+      pa:{qnh:29.92,qnhUnit:'inHg',fat:20,ia:null,pa:null,mgt:null,actual:null,mrt:null,diff:null,warn:'',
+          tempErr:'',iaErr:'',mgtErr:''},
+      cg:{ac:'',basic:null,moment:null,fuel:920,p1:90,p1u:'Kg',p2:90,p2u:'Kg',px:0,pxu:'Kg',
+          tw:'—',tm:'—',cg:'Select an Aircraft',tgt:140,m1:90,m1u:'Kg',m2:90,m2u:'Kg',mx:0,mxu:'Kg',minFuel:'—'},
+      cv:{from:'hPa',in:null,out:''}
+    };
+  },
+  methods:{
+    /* PPC */
+    onAc(which){
+      const s=this[which]; s.basic = this.AC[s.ac] ? this.AC[s.ac].weight : '';
+      if(which==='ppc') this.ppcCalc();
+    },
+    setFire(pct){ this.ppc.load = pct===70?3239:4239; this.ppc.loadUnit='lbs'; this.ppc.fire=true; this.ppc.bucket=pct; this.ppcCalc(); },
+    ppcCalc(){
+      const p=this.ppc;
+      const bw = p.ac && this.AC[p.ac] ? this.AC[p.ac].weight : 0;
+      const loadLbs = p.loadUnit==='kg' ? p.load*2.20462 : parseFloat(p.load);
+      const fuel = parseFloat(p.fuel)||0;
+      p.togw = (bw+loadLbs+fuel).toFixed(0);
+      p.unrounded = bw+loadLbs+fuel;
+      this.validateTogw();
+    },
+    validateFuel(){
+      const p=this.ppc, f=parseFloat(p.fuel);
+      if(isNaN(f)||f<200||f>1450){ p.fuelErr="Check fuel between 200 and 1450 lbs.";
+        p.maxTQ=p.tq2=p.tq4=p.tq30=p.tq100=0; }
+      else { p.fuelErr=""; }
+      this.ppcCalc();
+    },
+    validateTogw(){
+      const p=this.ppc, v=parseFloat(p.togw);
+      if(isNaN(v)||v<7500||v>11200){ p.togwErr="Check TO/GW between 7500 and 11200 lbs.";
+        p.maxTQ=p.tq2=p.tq4=p.tq30=p.tq100=0; }
+      else { p.togwErr=""; this.ppcAll(); }
+    },
+    ppcTemp(){
+      const p=this.ppc, t=parseFloat(p.fat);
+      if(isNaN(t)||t<-20||t>50){ p.tempErr="Check temperature between -20 and 50 °C.";
+        p.maxTQ=p.tq2=p.tq4=p.tq30=p.tq100=0; }
+      else { p.tempErr=""; this.ppcAll(); }
+    },
+    ppcAlt(){
+      const p=this.ppc, ia=parseFloat(p.ia);
+      if(isNaN(ia)||ia<0||ia>14000){ p.iaErr="Check indicated altitude between 0 and 14000 ft.";
+        p.maxTQ=p.tq2=p.tq4=p.tq30=p.tq100=0; return; }
+      p.iaErr="";
+      const q = p.qnhUnit==='inHg' ? 1 : 33.8639;
+      p.pa = (ia + (29.92 - (parseFloat(p.qnh)/q))*1000).toFixed(0);
+      p.da = (parseFloat(p.pa) + 120*(parseFloat(p.fat)-(15-parseFloat(p.pa)*0.00198))).toFixed(0);
+      this.ppcAll();
+    },
+    ppcAll(){
+      const p=this.ppc;
+      if(p.fuelErr||p.togwErr||p.tempErr||p.iaErr) return;
+      p.maxTQ = PPCEngine.calculateMaxTQ(p.pa,p.fat);
+      const gX = PPCEngine.calculateVirtualX(p.pa,p.fat);
+      const jv = PPCEngine.calculateVirtualY(p.unrounded,gX);
+      if(jv){
+        p.tq2 = parseFloat((-0.000011*jv**3 -0.000419*jv*jv +0.80214*jv+32.043856).toFixed(1));
+        p.tq4 = parseFloat((0.00001249*jv**3 -0.00218006*jv*jv +0.86450974*jv+34.93633987).toFixed(1));
+        const j8 = -0.00000062*jv**3 -0.00019146*jv*jv +0.95976235*jv+37.50445077;
+        p.tq100 = parseFloat((-0.000088*jv*jv +1.009451*jv+39.757143).toFixed(1));
+        p.tq30 = parseFloat((j8 + (p.tq100-j8)*(15/85)).toFixed(1));
+      }
+    },
+    ppcReset(){
+      const p=this.ppc;
+      p.fire=p.bucket=p.basic=p.fuelErr=p.togwErr=p.tempErr=p.iaErr=null;
+      p.ac=''; p.fuel=1400; p.load=600; p.loadUnit='lbs'; p.togw=p.unrounded=p.qnh=29.92;
+      p.qnhUnit='inHg'; p.fat=20; p.ia=p.pa=p.da=p.maxTQ=p.tq2=p.tq4=p.tq30=p.tq100=null;
+    },
+    /* Power Assurance */
+    paAlt(){
+      const a=this.pa, ia=parseFloat(a.ia);
+      if(isNaN(ia)||ia<0||ia>10000){ a.iaErr="Check indicated altitude between 0 and 10000 ft.";
+        a.mrt=a.diff=0; return; }
+      a.iaErr="";
+      const q=a.qnhUnit==='inHg'?1:33.8639;
+      a.pa=(ia+(29.92-parseFloat(a.qnh)/q)*1000).toFixed(0);
+      this.paMrt();
+    },
+    paTemp(){
+      const a=this.pa, t=parseFloat(a.fat);
+      if(isNaN(t)||t<-20||t>50){ a.tempErr="Check temperature between -20 and 50 °C."; a.mrt=a.diff=0; }
+      else { a.tempErr=""; this.paMrt(); }
+    },
+    paMgt(){
+      const a=this.pa, m=parseFloat(a.mgt);
+      if(isNaN(m)||m<400||m>880){ a.mgtErr="Check MGT between 400 and 880."; a.mrt=a.diff=0; }
+      else { a.mgtErr=""; this.paMrt(); }
+    },
+    paMrt(){
+      const a=this.pa;
+      const vX=PAEngine.calX(a.fat,a.mgt);
+      const mrt=PAEngine.calMRT(a.pa,vX);
+      a.mrt = mrt!==null?parseFloat(mrt.toFixed(1)):0;
+      this.paDiff();
+    },
+    paDiff(){
+      const a=this.pa;
+      if(a.actual!==null&&a.actual!==''){
+        a.diff=parseFloat((parseFloat(a.actual)-a.mrt).toFixed(1));
+        a.warn = a.diff<0 ? "The difference is negative. Shut down the aircraft." : "";
+      } else { a.diff=null; a.warn=""; }
+    },
+    /* CG */
+    cgUpdate(){
+      const c=this.cg;
+      if(c.ac && this.AC[c.ac]){ c.basic=this.AC[c.ac].weight; c.moment=this.AC[c.ac].moment; }
+      else { c.basic=c.moment=null; }
+      this.cgCalc(); this.cgMin();
+    },
+    cgCalc(){
+      const c=this.cg;
+      if(!c.ac){ c.tw=c.tm='—'; c.cg='Select an Aircraft'; return; }
+      let f = c.fuel; if(f>1420)f=1420; if(f<10)f=10; c.fuel=f;
+      const wF=parseFloat(f)||0, w1=CGEngine.getW(c.p1,c.p1u), w2=CGEngine.getW(c.p2,c.p2u), wx=CGEngine.getW(c.px,c.pxu);
+      const totW=c.basic+wF+w1+w2+wx;
+      const totM=c.moment+CGEngine.fuelMoment(wF)+(w1*46.7)+(w2*46.7)+(wx*85);
+      c.tw=totW.toFixed(2); c.tm=totM.toFixed(2);
+      c.cg = totW>0 ? (totM/totW).toFixed(2) : '0.00';
+    },
+    cgMin(){
+      const c=this.cg;
+      if(!c.ac||!c.tgt){ c.minFuel='Select Aircraft & Desired CG'; return; }
+      c.minFuel = CGEngine.minFuel(c.basic,c.moment,parseFloat(c.tgt),
+        CGEngine.getW(c.m1,c.m1u),CGEngine.getW(c.m2,c.m2u),CGEngine.getW(c.mx,c.mxu));
+    },
+    /* Converter */
+    cvConvert(){
+      const v=this.cv;
+      if(v.from==='hPa'&&v.in!==null&&v.in!=='') v.out=ConverterEngine.hPaToInHg(v.in)+" inHg";
+      else if(v.from==='inHg'&&v.in!==null&&v.in!=='') v.out=ConverterEngine.inHgToHPa(v.in)+" millibar, hPa";
+      else v.out='';
+    }
+  }
+});
+app.mount('#app');
+
+// Register PWA service worker for offline / install-to-home-screen
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>

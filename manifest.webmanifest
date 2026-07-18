@@ -1,0 +1,16 @@
+{
+  "name": "HUEY2 — UH-1 Performance & Balance",
+  "short_name": "HUEY2",
+  "description": "UH-1 Huey performance, power assurance, weight & balance calculator (BHT PUB-92-004-10 Rev 10).",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1c1f26",
+  "theme_color": "#1c1f26",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
