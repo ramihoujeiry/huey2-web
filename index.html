@@ -96,7 +96,8 @@
   .steps li::before{content:counter(step);position:absolute;left:12px;top:12px;width:24px;height:24px;
     border-radius:50%;background:#3a4660;color:#fff;font-weight:800;font-size:.8rem;
     display:flex;align-items:center;justify-content:center}
-  .steps li b{color:#fff}
+  .steps li b{background:#ffe600;color:#1a1200;padding:1px 5px;border-radius:5px;font-weight:800}
+  .steps li .hl,.list-btn .hl{background:#ff2bd6;color:#1a0014;padding:1px 5px;border-radius:5px;font-weight:800}
   table.lim{width:100%;border-collapse:collapse;font-size:.78rem}
   table.lim td{border-bottom:1px solid var(--line);padding:9px 4px;vertical-align:top}
   table.lim td:first-child{color:var(--muted);width:56%}
@@ -384,14 +385,14 @@
       <div v-if="emCats.length===0" class="muted" style="margin:10px 0">No procedures match "{{ q }}".</div>
       <div v-for="cat in emCats" :key="cat.cat" style="margin:12px 0">
         <h3>{{ cat.cat }}</h3>
-        <button class="list-btn" v-for="it in cat.items" :key="it.id" @click="emSel=it">{{ it.title }}</button>
+        <button class="list-btn" v-for="it in cat.items" :key="it.id" @click="emSel=it" v-html="hlText(it.title,q)"></button>
       </div>
     </div>
     <div class="card" v-else>
       <button class="btn ghost" @click="emSel=null">‹ Back to list</button>
       <h2>{{ emSel.title }}</h2>
       <div v-for="(t,i) in emSel.tags" :key="i" class="tag" :class="tagClass(t)">{{ tagText(t) }}</div>
-      <ol class="steps"><li v-for="(s,i) in emSel.steps" :key="i" v-html="boldStep(s)"></li></ol>
+      <ol class="steps"><li v-for="(s,i) in emSel.steps" :key="i" v-html="boldStep(s,q)"></li></ol>
     </div>
   </section>
 
@@ -407,14 +408,14 @@
       <div v-if="sopCats.length===0" class="muted" style="margin:10px 0">No procedures match "{{ q }}".</div>
       <div v-for="cat in sopCats" :key="cat.cat" style="margin:12px 0">
         <h3>{{ cat.cat }}</h3>
-        <button class="list-btn" v-for="it in cat.items" :key="it.id" @click="sopSel=it">{{ it.title }}</button>
+        <button class="list-btn" v-for="it in cat.items" :key="it.id" @click="sopSel=it" v-html="hlText(it.title,q)"></button>
       </div>
     </div>
     <div class="card" v-else>
       <button class="btn ghost" @click="sopSel=null">‹ Back to list</button>
       <h2>{{ sopSel.title }}</h2>
       <div v-for="(t,i) in sopSel.tags" :key="i" class="tag" :class="tagClass(t)">{{ tagText(t) }}</div>
-      <ol class="steps"><li v-for="(s,i) in sopSel.steps" :key="i" v-html="boldStep(s)"></li></ol>
+      <ol class="steps"><li v-for="(s,i) in sopSel.steps" :key="i" v-html="boldStep(s,q)"></li></ol>
     </div>
   </section>
 
@@ -785,14 +786,21 @@ const app = Vue.createApp({
     /* Emergency / SOP helpers */
     tagClass(t){ return t.split(':')[0]; },
     tagText(t){ const p=t.indexOf(':'); return (p<0?t:t.slice(p+1)); },
-    boldStep(s){
+    hlText(text,term){
+      if(!term) return text;
+      const safe=term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      const rx=new RegExp('('+safe+')','gi');
+      return text.split(/(<[^>]+>)/).map(seg=> seg.startsWith('<') ? seg : seg.replace(rx,'<span class="hl">$1</span>')).join('');
+    },
+    boldStep(s,q){
       const verbs=new Set(['Establish','Decrease','Increase','Apply','Autorotate','Close','Open',
         'Lower','Raise','Set','Monitor','Confirm','Avoid','Turn','Pull','Push','Check','Select',
         'Disconnect','Reduce','Initiate','Execute','Land','Shut','Note','If','Do','Rotate','Roll',
         'Verify','Attempt','Clear','Extend','Retract','Activate','Deactivate','Place','Remove','Secure']);
       const cues=/(WARNING|CAUTION|NOTE|Do NOT|Do not)/g;
       const re=/^([A-Z][a-z]+)/;
-      return s.replace(cues,'<b>$1</b>').replace(re,(m,w)=> verbs.has(w)?'<b>'+w+'</b>':m);
+      const out=s.replace(cues,'<b>$1</b>').replace(re,(m,w)=> verbs.has(w)?'<b>'+w+'</b>':m);
+      return this.hlText(out,(q||'').trim());
     }
   }
 });

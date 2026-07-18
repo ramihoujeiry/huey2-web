@@ -1,3 +1,7 @@
 node_modules/
 *.pyc
 __pycache__/
+*.txt
+*.png
+shot_*.py
+live_shot.png
