@@ -71,6 +71,21 @@
     border-radius:10px;padding:10px 12px;font-weight:700;margin:6px 0}
   .muted{color:var(--muted);font-size:.72rem}
   footer{text-align:center;color:var(--muted);font-size:.65rem;margin-top:18px;line-height:1.5}
+
+  /* Emergency / SOP drill-down */
+  .list-btn{display:block;width:100%;text-align:left;padding:11px 12px;margin:5px 0;border:1px solid var(--line);
+    border-radius:10px;background:var(--panel2);color:var(--ink);font-size:.86rem;cursor:pointer}
+  .list-btn:active{background:var(--accent)}
+  .tag{font-size:.74rem;font-weight:700;border-radius:8px;padding:7px 10px;margin:6px 0;line-height:1.35}
+  .tag.W{background:#3a2020;color:#ffb3b3;border:1px solid #5a2a2a}
+  .tag.C{background:#3a2a10;color:#ffd28a;border:1px solid #5a4420}
+  .tag.N{background:#1f2a33;color:#a9d4ff;border:1px solid #2a445a}
+  .steps{margin:10px 0 4px;padding-left:22px}
+  .steps li{margin:8px 0;font-size:.84rem;line-height:1.45}
+  table.lim{width:100%;border-collapse:collapse;font-size:.78rem}
+  table.lim td{border-bottom:1px solid var(--line);padding:7px 4px;vertical-align:top}
+  table.lim td:first-child{color:var(--muted);width:58%}
+  table.lim td:last-child{color:var(--ink);font-weight:600}
 </style>
 </head>
 <body>
@@ -85,6 +100,9 @@
     <button class="tab-btn" :class="{active:tab==='PA'}"  @click="tab='PA'">Power</button>
     <button class="tab-btn" :class="{active:tab==='CG'}"  @click="tab='CG'">W&amp;B / Fuel</button>
     <button class="tab-btn" :class="{active:tab==='CV'}"  @click="tab='CV'">Convert</button>
+    <button class="tab-btn" :class="{active:tab==='EM'}"  @click="tab='EM'">Emergency</button>
+    <button class="tab-btn" :class="{active:tab==='SOP'}" @click="tab='SOP'">SQN XII SOP</button>
+    <button class="tab-btn" :class="{active:tab==='LIM'}" @click="tab='LIM'">Limits</button>
   </nav>
 
   <!-- ================= PPC ================= -->
@@ -326,6 +344,56 @@
     </div>
   </section>
 
+  <!-- ================= EMERGENCY ================= -->
+  <section v-show="tab==='EM'">
+    <div class="card" v-if="!emSel">
+      <h2>Emergency Procedures</h2>
+      <p class="sub">Source: BHT PUB-92-004-10 Ch 9 — tap a category, then a procedure.</p>
+      <div v-for="cat in emergency" :key="cat.cat" style="margin:12px 0">
+        <h3>{{ cat.cat }}</h3>
+        <button class="list-btn" v-for="it in cat.items" :key="it.id" @click="emSel=it">{{ it.title }}</button>
+      </div>
+    </div>
+    <div class="card" v-else>
+      <button class="btn ghost" @click="emSel=null">‹ Back to list</button>
+      <h2>{{ emSel.title }}</h2>
+      <div v-for="(t,i) in emSel.tags" :key="i" class="tag" :class="tagClass(t)">{{ tagText(t) }}</div>
+      <ol class="steps"><li v-for="(s,i) in emSel.steps" :key="i">{{ s }}</li></ol>
+    </div>
+  </section>
+
+  <!-- ================= SQN XII SOP ================= -->
+  <section v-show="tab==='SOP'">
+    <div class="card" v-if="!sopSel">
+      <h2>SQN XII SOP</h2>
+      <p class="sub">SQN XII SOP Training Guide — kept separate from the manual's emergency section.</p>
+      <div v-for="cat in sop" :key="cat.cat" style="margin:12px 0">
+        <h3>{{ cat.cat }}</h3>
+        <button class="list-btn" v-for="it in cat.items" :key="it.id" @click="sopSel=it">{{ it.title }}</button>
+      </div>
+    </div>
+    <div class="card" v-else>
+      <button class="btn ghost" @click="sopSel=null">‹ Back to list</button>
+      <h2>{{ sopSel.title }}</h2>
+      <div v-for="(t,i) in sopSel.tags" :key="i" class="tag" :class="tagClass(t)">{{ tagText(t) }}</div>
+      <ol class="steps"><li v-for="(s,i) in sopSel.steps" :key="i">{{ s }}</li></ol>
+    </div>
+  </section>
+
+  <!-- ================= LIMITS ================= -->
+  <section v-show="tab==='LIM'">
+    <div class="card">
+      <h2>Operating Limits &amp; Restrictions</h2>
+      <p class="sub">Source: BHT PUB-92-004-10 Ch 5.</p>
+      <div v-for="g in limits" :key="g.group" style="margin:14px 0">
+        <h3>{{ g.group }}</h3>
+        <table class="lim">
+          <tr v-for="(r,i) in g.rows" :key="i"><td>{{ r[0] }}</td><td>{{ r[1] }}</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <footer>
     For planning reference only. Always cross-check against the current aircraft flight manual and
     your unit's approved performance data before flight. Not a substitute for official publications.
@@ -333,6 +401,7 @@
 </div>
 
 <script src="vue.global.prod.js"></script>
+<script src="emergency.js"></script>
 <script>
 /* ===== Aircraft data (HUEY2) ===== */
 const HUEY_AIRCRAFT_DATA = {
@@ -495,7 +564,9 @@ const app = Vue.createApp({
           tempErr:'',iaErr:'',mgtErr:''},
       cg:{ac:'',basic:null,moment:null,fuel:920,p1:90,p1u:'Kg',p2:90,p2u:'Kg',px:0,pxu:'Kg',
           tw:'—',tm:'—',cg:'Select an Aircraft',tgt:140,m1:90,m1u:'Kg',m2:90,m2u:'Kg',mx:0,mxu:'Kg',minFuel:'—'},
-      cv:{from:'hPa',in:null,out:''}
+      cv:{from:'hPa',in:null,out:''},
+      emergency:EMERGENCY_DATA, sop:SOP_DATA, limits:LIMITS_DATA,
+      emSel:null, sopSel:null
     };
   },
   methods:{
@@ -626,7 +697,10 @@ const app = Vue.createApp({
       if(v.from==='hPa'&&v.in!==null&&v.in!=='') v.out=ConverterEngine.hPaToInHg(v.in)+" inHg";
       else if(v.from==='inHg'&&v.in!==null&&v.in!=='') v.out=ConverterEngine.inHgToHPa(v.in)+" millibar, hPa";
       else v.out='';
-    }
+    },
+    /* Emergency / SOP helpers */
+    tagClass(t){ return t.split(':')[0]; },
+    tagText(t){ const p=t.indexOf(':'); return (p<0?t:t.slice(p+1)); }
   }
 });
 app.mount('#app');
