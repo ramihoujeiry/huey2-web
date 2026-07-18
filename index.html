@@ -9,83 +9,98 @@
 <title>HUEY2 — UH-1 Performance & Balance</title>
 <style>
   :root{
-    --bg:#1c1f26; --panel:#252a33; --panel2:#2e343f; --ink:#e8ecf1; --muted:#9aa4b2;
-    --accent:#4b5320; --accent2:#6b7530; --blue:#4ea1ff; --orange:#f25b00; --red:#ff4d4d;
-    --green:#2a623d; --line:#3a414e; --err:#ffb3b3; --errbg:#3a2020;
+    --bg:#15181e; --panel:#222831; --panel2:#2b323d; --ink:#eef2f7; --muted:#98a2b3;
+    --accent:#5b6b2a; --accent2:#7d8c3e; --blue:#4ea1ff; --orange:#ff9f1c; --red:#ff5a5a;
+    --amber:#ffb020; --green:#3a7d4f; --line:#353d49; --err:#ffb3b3; --errbg:#3a2020;
+    --shadow:0 6px 20px rgba(0,0,0,.35);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    font-size:16px;line-height:1.4}
-  .wrap{max-width:760px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 12px) 12px calc(env(safe-area-inset-bottom) + 24px)}
-  header.app{text-align:center;margin-bottom:10px}
-  header.app h1{font-size:1.25rem;margin:0;letter-spacing:.5px}
-  header.app p{margin:2px 0 0;color:var(--muted);font-size:.72rem}
+    font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 28px)}
+  header.app{text-align:center;margin-bottom:12px}
+  header.app h1{font-size:1.3rem;margin:0;letter-spacing:.6px;font-weight:800}
+  header.app p{margin:3px 0 0;color:var(--muted);font-size:.7rem}
 
   /* Tab bar */
-  .tabs{position:sticky;top:0;z-index:10;display:flex;gap:4px;background:var(--bg);
-    padding:6px 0 8px;border-bottom:1px solid var(--line)}
-  .tab-btn{flex:1;padding:10px 4px;border:1px solid var(--line);border-radius:10px;
-    background:var(--panel);color:var(--muted);font-weight:600;font-size:.82rem;cursor:pointer;
-    transition:.15s}
+  .tabs{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;gap:6px;background:var(--bg);
+    padding:8px 0 10px;border-bottom:1px solid var(--line)}
+  .tab-btn{flex:1 1 auto;min-width:64px;padding:11px 6px;border:1px solid var(--line);border-radius:11px;
+    background:var(--panel);color:var(--muted);font-weight:700;font-size:.78rem;cursor:pointer;
+    transition:background .15s,color .15s,border-color .15s}
+  .tab-btn:active{transform:scale(.97)}
   .tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent2)}
+  /* semantic tab colors */
+  .tab-btn.active[data-soft]{background:var(--panel2);color:var(--ink)}
+  button.tab-btn:nth-child(5).active{background:var(--amber);color:#1a1200;border-color:#ffc24d}   /* Emergency = amber */
+  button.tab-btn:nth-child(6).active{background:#23415e;color:#cfe6ff;border-color:var(--blue)}      /* SQN XII SOP = blue */
 
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
-    padding:14px;margin:14px 0}
-  .card h2{font-size:1.05rem;margin:0 0 2px}
-  .card h3{font-size:.95rem;margin:14px 0 8px;color:var(--accent2)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:16px;margin:14px 0;box-shadow:var(--shadow)}
+  .card h2{font-size:1.1rem;margin:0 0 3px;font-weight:800}
+  .card h3{font-size:.92rem;margin:16px 0 8px;color:var(--accent2);font-weight:700;letter-spacing:.3px}
   .card .sub{color:var(--muted);font-size:.7rem;margin:0 0 10px}
   hr{border:0;border-top:1px dashed var(--accent2);margin:18px 0}
 
   .field{margin:10px 0}
-  .field > label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:4px}
-  input[type=number],select{width:100%;padding:12px;font-size:1rem;border-radius:10px;
+  .field > label{display:block;font-size:.74rem;color:var(--muted);margin-bottom:5px;font-weight:600;letter-spacing:.3px}
+  input[type=number],input[type=search],select{width:100%;padding:12px 14px;font-size:1rem;border-radius:11px;
     border:1px solid var(--line);background:var(--panel2);color:var(--ink);appearance:none}
-  input[type=number]:focus,select:focus{outline:2px solid var(--accent2)}
+  input[type=number]:focus,input[type=search]:focus,select:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
   .row{display:flex;gap:8px}
   .row > *{flex:1}
   .row .unit{display:flex;align-items:center;gap:6px}
   .row .unit select{flex:0 0 92px}
 
-  .result{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
-    padding:10px 12px;margin:8px 0}
+  .result{background:var(--panel2);border:1px solid var(--line);border-radius:11px;
+    padding:11px 13px;margin:8px 0}
   .result .lab{font-size:.72rem;color:var(--muted)}
-  .result .val{font-size:1.25rem;font-weight:700;color:var(--blue)}
+  .result .val{font-size:1.3rem;font-weight:800;color:var(--blue)}
   .result .val.warn{color:var(--orange)}
   .result .val.danger{color:var(--red)}
   .result .val.good{color:#5fd08a}
 
-  .btn{display:inline-block;width:100%;padding:13px;border:0;border-radius:10px;
-    background:var(--accent);color:#fff;font-weight:700;font-size:.95rem;cursor:pointer;margin-top:8px}
-  .btn.ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+  .btn{display:inline-block;width:100%;padding:14px;border:0;border-radius:11px;
+    background:var(--accent);color:#fff;font-weight:800;font-size:.95rem;cursor:pointer;margin-top:10px;
+    transition:filter .15s,transform .1s}
+  .btn:active{transform:scale(.98);filter:brightness(1.1)}
+  .btn.ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line);font-weight:700}
 
   .ff{display:flex;gap:8px}
   .ff .btn{margin-top:0}
-  .info{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+  .info{background:var(--panel2);border:1px solid var(--line);border-radius:11px;
     padding:12px;font-size:.8rem;color:var(--muted)}
   .info p{margin:3px 0}
 
   .err{background:var(--errbg);color:var(--err);border:1px solid #5a2a2a;
-    border-radius:10px;padding:8px 12px;font-size:.82rem;margin:8px 0}
+    border-radius:11px;padding:9px 12px;font-size:.82rem;margin:8px 0}
   .warn-banner{background:#3a2a10;color:#ffd28a;border:1px solid #5a4420;
-    border-radius:10px;padding:10px 12px;font-weight:700;margin:6px 0}
+    border-radius:11px;padding:10px 12px;font-weight:700;margin:6px 0}
   .muted{color:var(--muted);font-size:.72rem}
-  footer{text-align:center;color:var(--muted);font-size:.65rem;margin-top:18px;line-height:1.5}
+  footer{text-align:center;color:var(--muted);font-size:.66rem;margin-top:18px;line-height:1.6}
 
   /* Emergency / SOP drill-down */
-  .list-btn{display:block;width:100%;text-align:left;padding:11px 12px;margin:5px 0;border:1px solid var(--line);
-    border-radius:10px;background:var(--panel2);color:var(--ink);font-size:.86rem;cursor:pointer}
-  .list-btn:active{background:var(--accent)}
-  .tag{font-size:.74rem;font-weight:700;border-radius:8px;padding:7px 10px;margin:6px 0;line-height:1.35}
-  .tag.W{background:#3a2020;color:#ffb3b3;border:1px solid #5a2a2a}
-  .tag.C{background:#3a2a10;color:#ffd28a;border:1px solid #5a4420}
-  .tag.N{background:#1f2a33;color:#a9d4ff;border:1px solid #2a445a}
-  .steps{margin:10px 0 4px;padding-left:22px}
-  .steps li{margin:8px 0;font-size:.84rem;line-height:1.45}
+  .list-btn{display:block;width:100%;text-align:left;padding:13px 14px;margin:6px 0;border:1px solid var(--line);
+    border-radius:11px;background:var(--panel2);color:var(--ink);font-size:.86rem;font-weight:600;cursor:pointer;
+    transition:background .15s,transform .1s}
+  .list-btn:active{background:var(--accent);color:#fff;transform:scale(.99)}
+  .tag{font-size:.76rem;font-weight:700;border-radius:10px;padding:10px 12px;margin:8px 0;line-height:1.45;
+    border-left:4px solid transparent;text-align:left}
+  .tag.W{background:rgba(255,90,90,.12);color:#ffc2c2;border-left-color:var(--red)}
+  .tag.C{background:rgba(255,159,28,.12);color:#ffd9a3;border-left-color:var(--orange)}
+  .tag.N{background:rgba(78,161,255,.10);color:#bfe0ff;border-left-color:var(--blue)}
+  .steps{margin:12px 0 4px;padding-left:0;list-style:none;counter-reset:step}
+  .steps li{counter-increment:step;position:relative;padding:12px 14px 12px 46px;margin:10px 0;
+    background:var(--panel2);border:1px solid var(--line);border-radius:11px;font-size:.86rem;line-height:1.6;text-align:left}
+  .steps li::before{content:counter(step);position:absolute;left:12px;top:12px;width:24px;height:24px;
+    border-radius:50%;background:#3a4660;color:#fff;font-weight:800;font-size:.8rem;
+    display:flex;align-items:center;justify-content:center}
+  .steps li b{color:#fff}
   table.lim{width:100%;border-collapse:collapse;font-size:.78rem}
-  table.lim td{border-bottom:1px solid var(--line);padding:7px 4px;vertical-align:top}
-  table.lim td:first-child{color:var(--muted);width:58%}
-  table.lim td:last-child{color:var(--ink);font-weight:600}
+  table.lim td{border-bottom:1px solid var(--line);padding:9px 4px;vertical-align:top}
+  table.lim td:first-child{color:var(--muted);width:56%}
+  table.lim td:last-child{color:var(--ink);font-weight:700}
 </style>
 </head>
 <body>
@@ -345,11 +360,16 @@
   </section>
 
   <!-- ================= EMERGENCY ================= -->
-  <section v-show="tab==='EM'">
+  <section id="sec-em" v-show="tab==='EM'">
     <div class="card" v-if="!emSel">
       <h2>Emergency Procedures</h2>
-      <p class="sub">Source: BHT PUB-92-004-10 Ch 9 — tap a category, then a procedure.</p>
-      <div v-for="cat in emergency" :key="cat.cat" style="margin:12px 0">
+      <p class="sub">Source: BHT PUB-92-004-10 Ch 9 (search also covers SQN XII SOP).</p>
+      <div class="field">
+        <label>Search all procedures</label>
+        <input type="search" v-model="q" placeholder="e.g. engine, tail rotor, fire, ditch, torque, NVG" />
+      </div>
+      <div v-if="emCats.length===0" class="muted" style="margin:10px 0">No procedures match "{{ q }}".</div>
+      <div v-for="cat in emCats" :key="cat.cat" style="margin:12px 0">
         <h3>{{ cat.cat }}</h3>
         <button class="list-btn" v-for="it in cat.items" :key="it.id" @click="emSel=it">{{ it.title }}</button>
       </div>
@@ -363,11 +383,16 @@
   </section>
 
   <!-- ================= SQN XII SOP ================= -->
-  <section v-show="tab==='SOP'">
+  <section id="sec-sop" v-show="tab==='SOP'">
     <div class="card" v-if="!sopSel">
       <h2>SQN XII SOP</h2>
-      <p class="sub">SQN XII SOP Training Guide — kept separate from the manual's emergency section.</p>
-      <div v-for="cat in sop" :key="cat.cat" style="margin:12px 0">
+      <p class="sub">SQN XII SOP Training Guide — the search above also covers Emergency procedures.</p>
+      <div class="field">
+        <label>Search all procedures</label>
+        <input type="search" v-model="q" placeholder="e.g. engine, tail rotor, fire, ditch, torque, NVG" />
+      </div>
+      <div v-if="sopCats.length===0" class="muted" style="margin:10px 0">No procedures match "{{ q }}".</div>
+      <div v-for="cat in sopCats" :key="cat.cat" style="margin:12px 0">
         <h3>{{ cat.cat }}</h3>
         <button class="list-btn" v-for="it in cat.items" :key="it.id" @click="sopSel=it">{{ it.title }}</button>
       </div>
@@ -566,10 +591,36 @@ const app = Vue.createApp({
           tw:'—',tm:'—',cg:'Select an Aircraft',tgt:140,m1:90,m1u:'Kg',m2:90,m2u:'Kg',mx:0,mxu:'Kg',minFuel:'—'},
       cv:{from:'hPa',in:null,out:''},
       emergency:EMERGENCY_DATA, sop:SOP_DATA, limits:LIMITS_DATA,
-      emSel:null, sopSel:null
+      emSel:null, sopSel:null, q:''
     };
   },
+  computed:{
+    merged(){
+      const all=[];
+      this.emergency.forEach(c=>c.items.forEach(it=>all.push({src:'Emergency',cat:c.cat,item:it})));
+      this.sop.forEach(c=>c.items.forEach(it=>all.push({src:'SQN XII SOP',cat:c.cat,item:it})));
+      return all;
+    },
+    emCats(){
+      const s=this.q.trim().toLowerCase(); if(!s) return this.emergency;
+      return this.filtered(s).filter(r=>r.src==='Emergency')
+        .reduce((acc,r)=>{ (acc.find(x=>x.cat===r.cat)||acc[acc.push({cat:r.cat,items:[]})-1]).items.push(r.item); return acc; },[]);
+    },
+    sopCats(){
+      const s=this.q.trim().toLowerCase(); if(!s) return this.sop;
+      return this.filtered(s).filter(r=>r.src==='SQN XII SOP')
+        .reduce((acc,r)=>{ (acc.find(x=>x.cat===r.cat)||acc[acc.push({cat:r.cat,items:[]})-1]).items.push(r.item); return acc; },[]);
+    }
+  },
   methods:{
+    filtered(s){
+      return this.merged.filter(r=>
+        r.item.title.toLowerCase().includes(s) ||
+        r.cat.toLowerCase().includes(s) ||
+        r.src.toLowerCase().includes(s) ||
+        (r.item.steps||[]).some(st=>st.toLowerCase().includes(s)) ||
+        (r.item.tags||[]).some(t=>t.toLowerCase().includes(s)));
+    },
     /* PPC */
     onAc(which){
       const s=this[which]; s.basic = this.AC[s.ac] ? this.AC[s.ac].weight : '';
