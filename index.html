@@ -337,18 +337,31 @@
   </section>
 
   <!-- ================= CONVERTER ================= -->
-  <section v-show="tab==='CV'">
+  <section id="sec-cv" v-show="tab==='CV'">
     <div class="card">
-      <h2>Pressure unit converter</h2>
+      <h2>Unit converter</h2>
       <div class="field">
-        <label>From</label>
-        <select v-model="cv.from" @change="cvConvert">
-          <option value="hPa">millibar, hPa</option><option value="inHg">inHg</option>
+        <label>Category</label>
+        <select name="cvcat" v-model="cv.cat" @change="cvCat">
+          <option value="pressure">Pressure</option>
+          <option value="temp">Temperature</option>
+          <option value="weight">Weight</option>
+          <option value="distance">Distance</option>
         </select>
       </div>
-      <div class="field">
-        <label>To</label>
-        <div class="muted">{{ cv.from==='hPa' ? 'inHg' : 'millibar, hPa' }}</div>
+      <div class="row">
+        <div class="field" style="flex:1">
+          <label>From</label>
+          <select name="cvfrom" v-model="cv.from" @change="cvConvert">
+            <option v-for="u in cvUnits()" :key="u" :value="u">{{ u }}</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1">
+          <label>To</label>
+          <select name="cvto" v-model="cv.to" @change="cvConvert">
+            <option v-for="u in cvUnits()" :key="u" :value="u">{{ u }}</option>
+          </select>
+        </div>
       </div>
       <div class="field">
         <label>Input value</label>
@@ -378,7 +391,7 @@
       <button class="btn ghost" @click="emSel=null">‹ Back to list</button>
       <h2>{{ emSel.title }}</h2>
       <div v-for="(t,i) in emSel.tags" :key="i" class="tag" :class="tagClass(t)">{{ tagText(t) }}</div>
-      <ol class="steps"><li v-for="(s,i) in emSel.steps" :key="i">{{ s }}</li></ol>
+      <ol class="steps"><li v-for="(s,i) in emSel.steps" :key="i" v-html="boldStep(s)"></li></ol>
     </div>
   </section>
 
@@ -401,7 +414,7 @@
       <button class="btn ghost" @click="sopSel=null">‹ Back to list</button>
       <h2>{{ sopSel.title }}</h2>
       <div v-for="(t,i) in sopSel.tags" :key="i" class="tag" :class="tagClass(t)">{{ tagText(t) }}</div>
-      <ol class="steps"><li v-for="(s,i) in sopSel.steps" :key="i">{{ s }}</li></ol>
+      <ol class="steps"><li v-for="(s,i) in sopSel.steps" :key="i" v-html="boldStep(s)"></li></ol>
     </div>
   </section>
 
@@ -589,7 +602,7 @@ const app = Vue.createApp({
           tempErr:'',iaErr:'',mgtErr:''},
       cg:{ac:'',basic:null,moment:null,fuel:920,p1:90,p1u:'Kg',p2:90,p2u:'Kg',px:0,pxu:'Kg',
           tw:'—',tm:'—',cg:'Select an Aircraft',tgt:140,m1:90,m1u:'Kg',m2:90,m2u:'Kg',mx:0,mxu:'Kg',minFuel:'—'},
-      cv:{from:'hPa',in:null,out:''},
+      cv:{cat:'pressure',from:'hPa',in:null,out:''},
       emergency:EMERGENCY_DATA, sop:SOP_DATA, limits:LIMITS_DATA,
       emSel:null, sopSel:null, q:''
     };
@@ -743,15 +756,44 @@ const app = Vue.createApp({
         CGEngine.getW(c.m1,c.m1u),CGEngine.getW(c.m2,c.m2u),CGEngine.getW(c.mx,c.mxu));
     },
     /* Converter */
+    cvCat(){
+      const map={pressure:['hPa','inHg'],temp:['°C','°F','K'],weight:['lbs','Kg'],distance:['ft','m','NM','km','mi']};
+      this.cv.from=map[this.cv.cat][0]; this.cv.to=map[this.cv.cat][1];
+      this.cvConvert();
+    },
+    cvUnits(){ return {pressure:['hPa','inHg'],temp:['°C','°F','K'],weight:['lbs','Kg'],distance:['ft','m','NM','km','mi']}[this.cv.cat]; },
     cvConvert(){
-      const v=this.cv;
-      if(v.from==='hPa'&&v.in!==null&&v.in!=='') v.out=ConverterEngine.hPaToInHg(v.in)+" inHg";
-      else if(v.from==='inHg'&&v.in!==null&&v.in!=='') v.out=ConverterEngine.inHgToHPa(v.in)+" millibar, hPa";
-      else v.out='';
+      const v=this.cv, x=parseFloat(v.in);
+      if(v.in===null||v.in===''||isNaN(x)){ v.out=''; return; }
+      const toM={ft:0.3048,m:1,NM:1852,km:1000,mi:1609.344};
+      const f={
+        pressure:(u,val)=> u==='hPa'? val/33.8639 : val*33.8639,
+        temp:(u,val)=>{
+          const c = u==='°C'?val : u==='°F'?(val-32)*5/9 : val-273.15;
+          return v.to==='°C'? c : v.to==='°F'? c*9/5+32 : c+273.15;
+        },
+        weight:(u,val)=> u==='lbs'? val*0.45359237 : val/0.45359237,
+        distance:(u,val)=>{ const m=val*toM[u]; return m/toM[v.to]; }
+      }[v.cat];
+      const r=f(v.from,x);
+      const unit = v.cat==='pressure' ? (v.to==='hPa'?' millibar, hPa':' inHg')
+                 : v.cat==='temp' ? ' '+v.to
+                 : v.cat==='weight' ? (v.to==='lbs'?' lbs':' Kg')
+                 : ' '+v.to;
+      v.out = (Math.round(r*1000)/1000) + unit;
     },
     /* Emergency / SOP helpers */
     tagClass(t){ return t.split(':')[0]; },
-    tagText(t){ const p=t.indexOf(':'); return (p<0?t:t.slice(p+1)); }
+    tagText(t){ const p=t.indexOf(':'); return (p<0?t:t.slice(p+1)); },
+    boldStep(s){
+      const verbs=new Set(['Establish','Decrease','Increase','Apply','Autorotate','Close','Open',
+        'Lower','Raise','Set','Monitor','Confirm','Avoid','Turn','Pull','Push','Check','Select',
+        'Disconnect','Reduce','Initiate','Execute','Land','Shut','Note','If','Do','Rotate','Roll',
+        'Verify','Attempt','Clear','Extend','Retract','Activate','Deactivate','Place','Remove','Secure']);
+      const cues=/(WARNING|CAUTION|NOTE|Do NOT|Do not)/g;
+      const re=/^([A-Z][a-z]+)/;
+      return s.replace(cues,'<b>$1</b>').replace(re,(m,w)=> verbs.has(w)?'<b>'+w+'</b>':m);
+    }
   }
 });
 app.mount('#app');
