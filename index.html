@@ -127,6 +127,14 @@
   .chk li b{background:#ffe600;color:#1a1200;padding:1px 5px;border-radius:5px;font-weight:800}
   .complete-banner{background:rgba(95,208,138,.14);color:#9bf0b8;border:1px solid #3a6b4e;
     border-radius:11px;padding:12px;font-weight:800;text-align:center;margin:10px 0}
+  .cgenv-svg{display:block;margin:4px 0 2px}
+  .cgenv-empty{color:var(--muted);font-size:.85rem;padding:14px 0;text-align:center}
+  .cgenv-lat{color:var(--muted);font-size:.72rem;margin-top:6px}
+  .cgenv-trial{color:var(--amber);font-size:.7rem;font-weight:700;margin-top:8px;letter-spacing:.3px}
+  table.lim{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:6px}
+  table.lim td{padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.lim td:last-child{text-align:right;font-weight:700;white-space:nowrap}
+  .info{background:rgba(152,162,179,.10);border:1px solid var(--line);border-radius:11px;padding:12px;margin:10px 0}
 </style>
 </head>
 <body>
@@ -145,6 +153,9 @@
     <button class="tab-btn" :class="{active:tab==='EM'}"  @click="tab='EM'">Emergency</button>
     <button class="tab-btn" :class="{active:tab==='SOP'}" @click="tab='SOP'">SOP</button>
     <button class="tab-btn" :class="{active:tab==='LIM'}" @click="tab='LIM'">Limits</button>
+    <button class="tab-btn" :class="{active:tab==='US'}" @click="tab='US'">Search</button>
+    <button class="tab-btn" :class="{active:tab==='DASH'}" @click="tab='DASH'">Status</button>
+    <button class="tab-btn" :class="{active:tab==='BRIEF'}" @click="tab='BRIEF'">Briefing</button>
   </nav>
 
   <!-- ================= PPC ================= -->
@@ -331,6 +342,13 @@
       <div class="result"><div class="lab">Calculated longitudinal CG</div><div class="val" :style="{color:'#f25b00'}">{{ cg.cg || '—' }}</div></div>
     </div>
 
+    <!-- TRIAL: CG envelope visual plot (add-on) -->
+    <div class="card">
+      <h3>CG Envelope — visual (TRIAL)</h3>
+      <p class="sub">Longitudinal FS 120–150 • envelope 130–144 • lateral ±{{ cgenv.latMax }} in</p>
+      <div v-html="cgSvg"></div>
+    </div>
+
     <div class="card">
       <h3>Minimum fuel target optimization</h3>
       <div class="field">
@@ -503,6 +521,104 @@
     </div>
   </section>
 
+  <!-- ================= UNIFIED SEARCH (Emergency + SOP) ================= -->
+  <section id="sec-us" v-show="tab==='US'">
+    <div class="card">
+      <h2>Unified Search</h2>
+      <p class="sub">Search all Emergency procedures and SQN XII SOP together.</p>
+      <div class="field">
+        <label>Search Emergency &amp; SOP</label>
+        <input type="search" v-model="uq" placeholder="e.g. engine, tail rotor, fire, ditch, torque, NVG" />
+      </div>
+
+      <div v-if="!uq.trim()" class="muted" style="margin:10px 0">Type to search Emergency &amp; SOP procedures</div>
+
+      <div v-else>
+        <div v-if="uniResults.length===0" class="muted" style="margin:10px 0">No procedures match "{{ uq }}".</div>
+        <button class="list-btn" v-for="(r,i) in uniResults" :key="i" @click="openUni(r)">
+          <span class="muted" style="font-size:.68rem;font-weight:700;letter-spacing:.3px">[{{ r.src }}]</span>
+          <span v-html="hlText(r.item.title,uq)"></span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= GO / NO-GO STATUS (trial) ================= -->
+  <section id="sec-dash" v-show="tab==='DASH'">
+    <div class="card">
+      <h2>Go / No-Go Status</h2>
+      <p class="sub">Aggregated readiness from PPC, Power Assurance &amp; W&amp;B. Trial feature — verify against the flight manual.</p>
+      <div class="tag N" style="text-align:center;font-weight:800;letter-spacing:.5px">⚠ TRIAL FEATURE — EXPERIMENTAL, SUBJECT TO REMOVAL</div>
+
+      <div v-if="goVerdict==='go'" class="complete-banner">✓ GO — all active checks within limits</div>
+      <div v-else-if="goVerdict==='nogo'" class="warn-banner" style="background:#3a2020;color:#ffb3b3;border-color:#5a2a2a">✗ NO-GO — see flagged items below</div>
+      <div v-else class="info" style="text-align:center;font-weight:700">Enter data in PPC / Power / W&amp;B tabs to evaluate</div>
+
+      <div v-for="(it,i) in goItems" :key="i" class="result" :style="{borderLeft:'4px solid '+(it.status==='ok'?'#3a7d4f':it.status==='bad'?'#ff5a5a':'#353d49')}">
+        <div class="lab" style="display:flex;justify-content:space-between;align-items:center">
+          <span>{{ it.label }}</span>
+          <span style="font-weight:800;font-size:.8rem"
+                :style="{color: it.status==='ok'?'#5fd08a':it.status==='bad'?'#ff5a5a':'#98a2b3'}">
+          {{ it.status==='ok'?'GO':it.status==='bad'?'NO-GO':'N/A' }}</span>
+        </div>
+        <div class="val" :class="{good:it.status==='ok',danger:it.status==='bad'}"
+             :style="{fontSize:'1.05rem'}">{{ it.value }}</div>
+      </div>
+
+      <hr />
+      <h3>Hard limits (reference)</h3>
+      <table class="lim">
+        <tr v-for="(r,i) in dash" :key="i">
+          <td>{{ r.label }}<span class="muted"> · {{ r.src }}</span></td>
+          <td>{{ r.value }}</td>
+        </tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= CREW / PASSENGER BRIEFING ================= -->
+  <section id="sec-brief" v-show="tab==='BRIEF'">
+    <div class="card">
+      <h2>Crew / Passenger Briefing <span class="tag N" style="font-size:.62rem;vertical-align:middle">TRIAL FEATURE</span></h2>
+      <p class="sub">Auto-built brief per BHT PUB-92-004-10 Ch 8-6 &amp; SQN XII SOP crew duties. Assemble/echo only — no performance computed.</p>
+
+      <div class="field">
+        <label>Mission type</label>
+        <select v-model="brief.mission">
+          <option value="Training">Training</option>
+          <option value="Cargo">Cargo</option>
+          <option value="NVG">NVG</option>
+          <option value="Cross-country">Cross-country</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="field" style="flex:1">
+          <label>Passengers (pax)</label>
+          <input type="number" min="0" v-model.number="brief.pax" />
+        </div>
+        <div class="field" style="flex:1">
+          <label>Crew count</label>
+          <input type="number" min="1" v-model.number="brief.crew" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Notes (optional)</label>
+        <textarea v-model="brief.notes" rows="2" placeholder="Route, ROZ, freqs, special emphasis..."></textarea>
+      </div>
+
+      <div class="row">
+        <button class="btn" @click="copyBrief()">{{ briefCopied ? 'Copied ✓' : 'Copy briefing' }}</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Generated briefing</h3>
+      <p class="muted" v-if="!cg.ac" style="margin-top:0">Select aircraft in W&amp;B tab for weight/CG details.</p>
+      <div class="steps" v-html="briefText"></div>
+    </div>
+  </section>
+
   <footer>
     For planning reference only. Always cross-check against the current aircraft flight manual and
     your unit's approved performance data before flight. Not a substitute for official publications.
@@ -510,6 +626,8 @@
 </div>
 
 <script src="vue.global.prod.js"></script>
+<script src="cgenv.js"></script>
+<script src="dash.js"></script>
 <script src="emergency.js"></script>
 <script src="startup.js"></script>
 <script>
@@ -676,7 +794,9 @@ const app = Vue.createApp({
           tw:'—',tm:'—',cg:'Select an Aircraft',tgt:140,m1:90,m1u:'Kg',m2:90,m2u:'Kg',mx:0,mxu:'Kg',minFuel:'—'},
       cv:{cat:'pressure',from:'hPa',in:null,out:''},
       emergency:EMERGENCY_DATA, sop:SOP_DATA, limits:LIMITS_DATA, startup:STARTUP_DATA,
-      emSel:null, sopSel:null, phaseSel:null, done:{}, q:''
+      cgenv:CGENV, dash:DASH_LIMITS,
+      emSel:null, sopSel:null, phaseSel:null, done:{}, q:'', uq:'',
+      brief:{mission:'Training', pax:0, crew:2, notes:''}, briefCopied:false
     };
   },
   computed:{
@@ -700,7 +820,151 @@ const app = Vue.createApp({
     totalSteps(){ return this.startup.reduce((n,p)=>n+p.steps.length,0); },
     doneCount(){ return Object.values(this.done).filter(Boolean).length; },
     overallDone(){ return this.totalSteps? Math.round(this.doneCount/this.totalSteps*100) : 0; },
-    allComplete(){ return this.totalSteps>0 && this.doneCount===this.totalSteps; }
+    allComplete(){ return this.totalSteps>0 && this.doneCount===this.totalSteps; },
+    uniResults(){
+      const s=this.uq.trim().toLowerCase(); if(!s) return [];
+      return this.filtered(s).map(r=>({src:r.src,cat:r.cat,item:r.item}));
+    },
+    goItems(){
+      const p=this.ppc, a=this.pa, c=this.cg;
+      const items=[];
+      const ppcErr = p.fuelErr||p.togwErr||p.tempErr||p.iaErr;
+      if(ppcErr){
+        items.push({label:'PPC — predicted hover TQ', value:ppcErr, status:'bad'});
+      } else if(p.maxTQ===null || p.maxTQ===''){
+        items.push({label:'PPC — predicted hover TQ', value:'not calculated', status:'na'});
+      } else {
+        const v=parseFloat(p.maxTQ);
+        items.push({label:'PPC — predicted hover TQ', value:v+' % vs 100 % limit', status: v>100?'bad':'ok'});
+      }
+      const paErr = a.iaErr||a.tempErr||a.mgtErr;
+      if(paErr){
+        items.push({label:'Power Assurance — diff (actual−req)', value:paErr, status:'bad'});
+      } else if(a.diff===null || a.diff===''){
+        items.push({label:'Power Assurance — diff (actual−req)', value:'not set', status:'na'});
+      } else {
+        const d=parseFloat(a.diff);
+        items.push({label:'Power Assurance — diff (actual−req)', value:d+' %', status: d<0?'bad':'ok'});
+      }
+      if(!c.ac || c.cg==='Select an Aircraft' || !c.tgt){
+        items.push({label:'CG — longitudinal', value:(c.ac? c.cg :'select aircraft'), status:'na'});
+      } else {
+        const cgNum=parseFloat(c.cg);
+        const minFuelBad = /autorotation/i.test(c.minFuel||'');
+        const outOfEnv = isNaN(cgNum) || cgNum<100 || cgNum>140;
+        items.push({label:'CG — '+c.cg+' vs target '+c.tgt,
+                    value:(c.minFuel||'—')+(outOfEnv?' (out of envelope)':''),
+                    status:(minFuelBad||outOfEnv)?'bad':'ok'});
+      }
+      return items;
+    },
+    goVerdict(){
+      const items=this.goItems;
+      if(!items.length) return 'na';
+      if(items.some(it=>it.status==='bad')) return 'nogo';
+      if(items.some(it=>it.status==='na'))  return 'na';
+      return 'go';
+    },
+    cgSvg(){
+      const e = this.cgenv || CGENV;
+      const c = this.cg;
+      const cgNum = parseFloat(c.cg);
+      if (c.ac === '' || c.cg == null || c.cg === '' || isNaN(cgNum)) {
+        return '<div class="cgenv-empty">Enter aircraft &amp; fuel</div>';
+      }
+      const W=360, H=200, padL=40, padR=20, top=30, botY=160;
+      const plotW = W - padL - padR;
+      const axMin = e.fsAxisMin, axMax = e.fsAxisMax;
+      const sx = fs => padL + (fs - axMin) / (axMax - axMin) * plotW;
+      const xEnv0 = sx(e.fsMin), xEnv1 = sx(e.fsMax), envW = xEnv1 - xEnv0;
+      const tgt = parseFloat(c.tgt);
+      const tgtX = isFinite(tgt) ? sx(Math.max(axMin, Math.min(axMax, tgt))) : null;
+      const dotX = sx(Math.max(axMin, Math.min(axMax, cgNum)));
+      const inside = cgNum >= e.fsMin && cgNum <= e.fsMax;
+      const dotColor = inside ? '#5fd08a' : '#ff5a5a';
+      const dotCY = (top + botY) / 2;
+      const ticks = [120,125,130,135,140,145,150];
+      const tickMarks = ticks.map(t =>
+        '<line x1="'+sx(t)+'" y1="'+botY+'" x2="'+sx(t)+'" y2="'+(botY+5)+'" stroke="#98a2b3"/>' +
+        '<text x="'+sx(t)+'" y="'+(botY+18)+'" fill="#98a2b3" font-size="9" text-anchor="middle">'+t+'</text>'
+      ).join('');
+      const svg =
+        '<svg viewBox="0 0 '+W+' '+H+'" width="100%" class="cgenv-svg" role="img" aria-label="CG envelope plot">' +
+          '<rect x="'+xEnv0+'" y="'+top+'" width="'+envW+'" height="'+(botY-top)+'" fill="#5fd08a" fill-opacity="0.18" stroke="#5fd08a" stroke-opacity="0.6" stroke-dasharray="4 3"/>' +
+          '<text x="'+((xEnv0+xEnv1)/2)+'" y="'+(top-8)+'" fill="#5fd08a" font-size="9" text-anchor="middle">ENV 130–144</text>' +
+          '<line x1="'+padL+'" y1="'+botY+'" x2="'+(W-padR)+'" y2="'+botY+'" stroke="#98a2b3"/>' +
+          tickMarks +
+          (tgtX !== null
+            ? '<line x1="'+tgtX+'" y1="'+top+'" x2="'+tgtX+'" y2="'+botY+'" stroke="#ffb020" stroke-width="1.5" stroke-dasharray="5 3"/>' +
+              '<text x="'+tgtX+'" y="'+(top-8)+'" fill="#ffb020" font-size="9" text-anchor="middle">TGT '+c.tgt+'</text>'
+            : '') +
+          '<line x1="'+dotX+'" y1="'+top+'" x2="'+dotX+'" y2="'+botY+'" stroke="'+dotColor+'" stroke-opacity="0.5" stroke-width="1"/>' +
+          '<circle cx="'+dotX+'" cy="'+dotCY+'" r="6" fill="'+dotColor+'" stroke="#0e1116" stroke-width="1.5"/>' +
+          '<text x="'+dotX+'" y="'+(dotCY+22)+'" fill="'+dotColor+'" font-size="10" text-anchor="middle" font-weight="700">'+c.cg+'</text>' +
+        '</svg>';
+      const lat = '<div class="cgenv-lat">Lateral envelope ±'+e.latMax+' in — lateral CG input not yet wired (shown on centerline)</div>';
+      const tag = '<div class="cgenv-trial">⚠ TRIAL FEATURE — visual only, removable</div>';
+      return svg + lat + tag;
+    },
+    briefText(){
+      const b = this.brief;
+      const ac = this.cg.ac || 'N/A (select in W&B)';
+      const bw = this.cg.basic || '—';
+      const cg = this.cg.cg || '—';
+      const tgt = (this.cg.tgt !== undefined && this.cg.tgt !== null && this.cg.tgt !== '') ? this.cg.tgt : '—';
+      const mf = this.cg.minFuel || '—';
+      const steps = Array.isArray(this.startup) ? this.startup.length : 0;
+      const wanted = ['Engine Failure / Autorotation','Complete Loss of Tail Rotor Thrust','Fire — Flight','Ditching'];
+      const em = Array.isArray(this.emergency) ? this.emergency : [];
+      let keyEm = em.filter(e => wanted.some(w => (e.title||'').indexOf(w) === 0 || (e.title||'').indexOf(w) !== -1)).map(e => e.title);
+      if (keyEm.length === 0) keyEm = ['Engine Failure / Autorotation','Loss of Tail Rotor Thrust','Fire — Flight','Ditching / Emergency Landing'];
+      keyEm = keyEm.slice(0,4);
+      const missionEmphasis = [];
+      if (b.mission === 'NVG') missionEmphasis.push('NVG: dark adaptation (~45 min, avoid high-intensity lights), blindfold cockpit drills, night-ops briefing attended, unaided-vision recovery plan.');
+      if (b.mission === 'Cargo') missionEmphasis.push('External/internal load: cargo secured & CG within limits, NCM monitors load condition, cargo hook release checked (electrical & manual), no loose items in cabin.');
+      if (b.mission === 'Cross-country') missionEmphasis.push('Cross-country: enroute weather & alternates confirmed, fuel planning/reserves, comms handoffs, diversion airfields briefed.');
+      if (b.mission === 'Training') missionEmphasis.push('Training: sequence of exercises, knock-it-off criteria, and instructor/student control transfer briefed.');
+      if (missionEmphasis.length === 0) missionEmphasis.push('Review mission-specific hazards and special emphasis items.');
+
+      const L = [];
+      L.push('<b>CREW / PASSENGER BRIEFING</b>');
+      L.push('Mission: ' + b.mission + '  |  Crew: ' + (b.crew||0) + '  |  Pax: ' + (b.pax||0));
+      L.push('');
+      L.push('<b>1. MISSION &amp; AIRCRAFT</b>');
+      L.push('• Aircraft: ' + ac);
+      L.push('• Basic weight: ' + bw + ' lbs');
+      L.push('• Current longitudinal CG: ' + cg);
+      L.push('• Desired CG target: ' + tgt);
+      L.push('• Max allowed fuel (min-fuel target): ' + mf);
+      L.push('• Startup checklist: ' + (steps ? steps + ' steps (see Startup tab)' : 'see Startup tab'));
+      L.push('');
+      L.push('<b>2. CONDUCTED BRIEF</b>');
+      L.push('• Limitations &amp; restrictions: review aircraft limits/placards (see Limits tab); no uncovered malfunctions without sign-out.');
+      L.push('• Weather &amp; conditions: obtain full weather brief for departure/destination; confirm VMC and cloud clearances (1000 ft below/above, 1 SM horizontal).');
+      L.push('• Route / ROZ: brief route of flight, altitudes, ROZ, obstacles &amp; threat/terrain avoidance.');
+      L.push('• Communications plan: primary/secondary freqs, lost-comms procedures, clearances copied by P.');
+      L.push('• Emergency procedures (see Emergency tab): ' + keyEm.join('; ') + '.');
+      L.push('• Cabin safety: seatbelts/harnesses secured, doors briefed, emergency exits identified, fire extinguisher &amp; first-aid location, no loose items.');
+      missionEmphasis.forEach(m => L.push('• Special emphasis — ' + m));
+      L.push('');
+      L.push('<b>3. CREW DUTIES (SQN XII SOP)</b>');
+      L.push('• Pilot on the Controls (P*): primary responsibility to safely fly the aircraft, avoid all hazards, terrain &amp; obstacles.');
+      L.push('• Pilot monitoring (P): monitors flight profile — altitude, power, terrain avoidance, airspeed; performs cockpit tasks, navigates, communicates, copies clearances/reports.');
+      L.push('• Nonrated Crewmember (NCM): maintains SA on terrain, threats &amp; other formation members; monitors cargo/load and instruments; notifies pilot of position changes; controls doors per PC direction.');
+      L.push('');
+      L.push('<b>4. PASSENGER BRIEF</b>');
+      L.push('• Seatbelts/harnesses fastened at all times when seated.');
+      L.push('• Approach/depart aircraft only in the proper direction to avoid main &amp; tail rotor blades; follow crew hand signals.');
+      L.push('• Doors &amp; emergency exits: location and operation identified.');
+      L.push('• No loose items; secure all equipment; no smoking; weapons/ammunition per rules.');
+      L.push('• Off-loading/loading only on crew signal; brace/emergency-landing posture explained.');
+      if (b.notes && String(b.notes).trim()) {
+        L.push('');
+        L.push('<b>5. NOTES</b>');
+        L.push('• ' + String(b.notes).trim());
+      }
+      return L.join('<br>');
+    }
   },
   methods:{
     filtered(s){
@@ -887,6 +1151,17 @@ const app = Vue.createApp({
       return Math.round(c/p.steps.length*100);
     },
     phaseIsComplete(pid){ return this.phaseDone(pid)===100; },
+    openUni(r){
+      if(r.src==='Emergency'){ this.emSel=r.item; this.tab='EM'; }
+      else { this.sopSel=r.item; this.tab='SOP'; }
+    },
+    copyBrief(){
+      const plain = this.briefText.replace(/<br>/g,'\n').replace(/<[^>]+>/g,'').replace(/&amp;/g,'&');
+      const done = () => { this.briefCopied = true; setTimeout(()=>{ this.briefCopied = false; }, 1800); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(plain).then(done).catch(()=>{ done(); });
+      } else { done(); }
+    },
     resetChecks(){ this.done={}; }
   }
 });
