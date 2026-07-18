@@ -2,7 +2,7 @@
    HUEY2 — Emergency & Limitations data
    Trimmed pilot-checklist style, derived from:
      BHT PUB-92-004-10 (UH-1H-II Operator's Manual, Rev 10, 21 Aug 2017)
-     SQN XII SOP Training Guide
+     Squadron SOP Training Guide
    Callout tags: W = WARNING, C = CAUTION, N = NOTE
    For planning reference only — always cross-check the manual.
    ============================================================ */
@@ -164,7 +164,7 @@ const EMERGENCY_DATA = [
   ]}
 ];
 
-/* ---------------- SQN XII SOP (separate tab) ---------------- */
+/* ---------------- Squadron SOP (separate tab) ---------------- */
 const SOP_DATA = [
   { cat: "Engine / Monitoring", items: [
     { id: "sop-overtorque", title: "Over-Torque Recovery",
@@ -197,7 +197,7 @@ const SOP_DATA = [
   ]},
   { cat: "Training / NVG", items: [
     { id: "sop-nvg", title: "NVG Failure (single/partial)",
-      tags: ["N:SQN XII requires immediate actions for NVG-equipped night ops."],
+      tags: ["N:Squadron requires immediate actions for NVG-equipped night ops."],
       steps: [ "If one tube fails: continue on good tube / monocular if briefed.", "If total NVG failure: remove goggles, transition to ambient/unaided or instruments per brief.", "Maintain aircraft control; climb/route to better ambient or abort NVG segment." ] },
     { id: "sop-config", title: "Simulated Max GW Training Configs",
       tags: ["N:Configuration A = 900 lb; Configuration B = 1440 lb added; crew FS 46.7 / NCM FS 85."],

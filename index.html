@@ -34,7 +34,7 @@
   /* semantic tab colors */
   button.tab-btn:nth-child(5).active{background:#1f5e3a;color:#bff5d6;border-color:#3dbd77}          /* Startup = green */
   button.tab-btn:nth-child(6).active{background:var(--amber);color:#1a1200;border-color:#ffc24d}   /* Emergency = amber */
-  button.tab-btn:nth-child(7).active{background:#23415e;color:#cfe6ff;border-color:var(--blue)}      /* SQN XII SOP = blue */
+  button.tab-btn:nth-child(7).active{background:#23415e;color:#cfe6ff;border-color:var(--blue)}      /* Squadron SOP = blue */
 
   .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;
     padding:16px;margin:14px 0;box-shadow:var(--shadow)}
@@ -292,6 +292,7 @@
       <div class="result"><div class="lab">Difference (actual − required)</div>
         <div class="val" :class="{danger:pa.diff<0, good:pa.diff>=0}">{{ pa.diff ?? '—' }}</div></div>
       <div class="warn-banner" v-if="pa.warn">{{ pa.warn }}</div>
+      <button class="btn ghost" @click="paReset">Reset</button>
     </div>
   </section>
 
@@ -378,6 +379,7 @@
       </div>
       <div class="result"><div class="lab">Maximum allowed fuel weight</div>
         <div class="val" :style="{color:'#2a623d'}">{{ cg.minFuel || '—' }}</div></div>
+      <button class="btn ghost" @click="cgReset">Reset</button>
     </div>
   </section>
 
@@ -421,7 +423,7 @@
   <section id="sec-em" v-show="tab==='EM'">
     <div class="card" v-if="!emSel">
       <h2>Emergency Procedures</h2>
-      <p class="sub">Source: BHT PUB-92-004-10 Ch 9 (search also covers SQN XII SOP).</p>
+      <p class="sub">Source: BHT PUB-92-004-10 Ch 9 (search also covers Squadron SOP).</p>
       <div class="field">
         <label>Search all procedures</label>
         <input type="search" v-model="q" placeholder="e.g. engine, tail rotor, fire, ditch, torque, NVG" />
@@ -440,11 +442,11 @@
     </div>
   </section>
 
-  <!-- ================= SQN XII SOP ================= -->
+  <!-- ================= Squadron SOP ================= -->
   <section id="sec-sop" v-show="tab==='SOP'">
     <div class="card" v-if="!sopSel">
       <h2>SOP</h2>
-      <p class="sub">SQN XII SOP Training Guide — the search above also covers Emergency procedures.</p>
+      <p class="sub">Squadron SOP Training Guide — the search above also covers Emergency procedures.</p>
       <div class="field">
         <label>Search all procedures</label>
         <input type="search" v-model="q" placeholder="e.g. engine, tail rotor, fire, ditch, torque, NVG" />
@@ -525,7 +527,7 @@
   <section id="sec-us" v-show="tab==='US'">
     <div class="card">
       <h2>Unified Search</h2>
-      <p class="sub">Search all Emergency procedures and SQN XII SOP together.</p>
+      <p class="sub">Search all Emergency procedures and Squadron SOP together.</p>
       <div class="field">
         <label>Search Emergency &amp; SOP</label>
         <input type="search" v-model="uq" placeholder="e.g. engine, tail rotor, fire, ditch, torque, NVG" />
@@ -580,7 +582,7 @@
   <section id="sec-brief" v-show="tab==='BRIEF'">
     <div class="card">
       <h2>Crew / Passenger Briefing <span class="tag N" style="font-size:.62rem;vertical-align:middle">TRIAL FEATURE</span></h2>
-      <p class="sub">Auto-built brief per BHT PUB-92-004-10 Ch 8-6 &amp; SQN XII SOP crew duties. Assemble/echo only — no performance computed.</p>
+      <p class="sub">Auto-built brief per BHT PUB-92-004-10 Ch 8-6 &amp; Squadron SOP crew duties. Assemble/echo only — no performance computed.</p>
 
       <div class="field">
         <label>Mission type</label>
@@ -803,7 +805,7 @@ const app = Vue.createApp({
     merged(){
       const all=[];
       this.emergency.forEach(c=>c.items.forEach(it=>all.push({src:'Emergency',cat:c.cat,item:it})));
-      this.sop.forEach(c=>c.items.forEach(it=>all.push({src:'SQN XII SOP',cat:c.cat,item:it})));
+      this.sop.forEach(c=>c.items.forEach(it=>all.push({src:'Squadron SOP',cat:c.cat,item:it})));
       return all;
     },
     emCats(){
@@ -813,7 +815,7 @@ const app = Vue.createApp({
     },
     sopCats(){
       const s=this.q.trim().toLowerCase(); if(!s) return this.sop;
-      return this.filtered(s).filter(r=>r.src==='SQN XII SOP')
+      return this.filtered(s).filter(r=>r.src==='Squadron SOP')
         .reduce((acc,r)=>{ (acc.find(x=>x.cat===r.cat)||acc[acc.push({cat:r.cat,items:[]})-1]).items.push(r.item); return acc; },[]);
     },
     currentPhase(){ return this.startup.find(p=>p.id===this.phaseSel) || null; },
@@ -947,7 +949,7 @@ const app = Vue.createApp({
       L.push('• Cabin safety: seatbelts/harnesses secured, doors briefed, emergency exits identified, fire extinguisher &amp; first-aid location, no loose items.');
       missionEmphasis.forEach(m => L.push('• Special emphasis — ' + m));
       L.push('');
-      L.push('<b>3. CREW DUTIES (SQN XII SOP)</b>');
+      L.push('<b>3. CREW DUTIES (Squadron SOP)</b>');
       L.push('• Pilot on the Controls (P*): primary responsibility to safely fly the aircraft, avoid all hazards, terrain &amp; obstacles.');
       L.push('• Pilot monitoring (P): monitors flight profile — altitude, power, terrain avoidance, airspeed; performs cockpit tasks, navigates, communicates, copies clearances/reports.');
       L.push('• Nonrated Crewmember (NCM): maintains SA on terrain, threats &amp; other formation members; monitors cargo/load and instruments; notifies pilot of position changes; controls doors per PC direction.');
@@ -978,7 +980,7 @@ const app = Vue.createApp({
     /* PPC */
     onAc(which){
       const s=this[which]; s.basic = this.AC[s.ac] ? this.AC[s.ac].weight : '';
-      if(which==='ppc') this.ppcCalc();
+      if(which==='ppc'){ this.ppcCalc(); this.cg.ac = s.ac; this.cgUpdate(); }
     },
     setFire(pct){ this.ppc.load = pct===70?3239:4239; this.ppc.loadUnit='lbs'; this.ppc.fire=true; this.ppc.bucket=pct; this.ppcCalc(); },
     ppcCalc(){
@@ -1096,6 +1098,17 @@ const app = Vue.createApp({
       c.minFuel = CGEngine.minFuel(c.basic,c.moment,parseFloat(c.tgt),
         CGEngine.getW(c.m1,c.m1u),CGEngine.getW(c.m2,c.m2u),CGEngine.getW(c.mx,c.mxu));
     },
+    paReset(){
+      const a=this.pa;
+      a.qnh=29.92; a.qnhUnit='inHg'; a.fat=20; a.ia=a.pa=a.mgt=a.actual=a.mrt=a.diff=null;
+      a.tempErr=a.iaErr=a.mgtErr=a.warn='';
+    },
+    cgReset(){
+      const c=this.cg;
+      c.ac=''; c.basic=c.moment=null; c.fuel=920; c.p1=90; c.p1u='Kg'; c.p2=90; c.p2u='Kg'; c.px=0; c.pxu='Kg';
+      c.tw='—'; c.tm='—'; c.cg='Select an Aircraft'; c.tgt=140;
+      c.m1=90; c.m1u='Kg'; c.m2=90; c.m2u='Kg'; c.mx=0; c.mxu='Kg'; c.minFuel='—';
+    },
     /* Converter */
     cvCat(){
       const map={pressure:['hPa','inHg'],temp:['°C','°F','K'],weight:['lbs','Kg'],distance:['ft','m','NM','km','mi']};
@@ -1157,10 +1170,11 @@ const app = Vue.createApp({
     },
     copyBrief(){
       const plain = this.briefText.replace(/<br>/g,'\n').replace(/<[^>]+>/g,'').replace(/&amp;/g,'&');
-      const done = () => { this.briefCopied = true; setTimeout(()=>{ this.briefCopied = false; }, 1800); };
+      this.briefCopied = true;
+      setTimeout(()=>{ this.briefCopied = false; }, 1800);
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(plain).then(done).catch(()=>{ done(); });
-      } else { done(); }
+        navigator.clipboard.writeText(plain).catch(()=>{});
+      }
     },
     resetChecks(){ this.done={}; }
   }

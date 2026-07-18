@@ -6,7 +6,7 @@
        8-22 STARTING ENGINE
        8-23 ENGINE RUNUP
        8-24 BEFORE TAKEOFF
-     + SQN XII SOP Training Guide (L/M/N/P) additions
+     + Squadron SOP Training Guide (L/M/N/P) additions
    Steps are broken into tappable lines; callouts kept as
    WARNING / CAUTION / NOTE tags (bolded by boldStep()).
    ============================================================ */
