@@ -314,7 +314,7 @@
 
       <div class="field">
         <label>Fuel weight (lbs)</label>
-        <input type="number" v-model.number="cg.fuel" @input="cgCalc" />
+        <input type="number" v-model.number="cg.fuel" @input="cgCalc" @change="cgClamp" />
       </div>
       <div class="field">
         <label>Pilot 1 weight</label>
@@ -1084,12 +1084,17 @@ const app = Vue.createApp({
     cgCalc(){
       const c=this.cg;
       if(!c.ac){ c.tw=c.tm='—'; c.cg='Select an Aircraft'; return; }
-      let f = c.fuel; if(f>1420)f=1420; if(f<10)f=10; c.fuel=f;
-      const wF=parseFloat(f)||0, w1=CGEngine.getW(c.p1,c.p1u), w2=CGEngine.getW(c.p2,c.p2u), wx=CGEngine.getW(c.px,c.pxu);
+      const wF=parseFloat(c.fuel)||0, w1=CGEngine.getW(c.p1,c.p1u), w2=CGEngine.getW(c.p2,c.p2u), wx=CGEngine.getW(c.px,c.pxu);
       const totW=c.basic+wF+w1+w2+wx;
       const totM=c.moment+CGEngine.fuelMoment(wF)+(w1*46.7)+(w2*46.7)+(wx*85);
       c.tw=totW.toFixed(2); c.tm=totM.toFixed(2);
       c.cg = totW>0 ? (totM/totW).toFixed(2) : '0.00';
+    },
+    cgClamp(){
+      const c=this.cg; let f=parseFloat(c.fuel);
+      if(isNaN(f)) f=920;
+      if(f>1420)f=1420; if(f<10)f=10;
+      c.fuel=f; this.cgCalc();
     },
     cgMin(){
       const c=this.cg;
