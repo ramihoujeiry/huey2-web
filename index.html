@@ -156,6 +156,7 @@
     <button class="tab-btn" :class="{active:tab==='US'}" @click="tab='US'">Search</button>
     <button class="tab-btn" :class="{active:tab==='DASH'}" @click="tab='DASH'">Status</button>
     <button class="tab-btn" :class="{active:tab==='BRIEF'}" @click="tab='BRIEF'">Briefing</button>
+    <button class="tab-btn" :class="{active:tab==='WEATHER'}" @click="tab='WEATHER'">Weather</button>
   </nav>
 
   <!-- ================= PPC ================= -->
@@ -631,6 +632,7 @@
 <script src="dash.js"></script>
 <script src="emergency.js"></script>
 <script src="startup.js"></script>
+<script src="weather.js"></script>
 <script>
 /* ===== Aircraft data (HUEY2) ===== */
 const HUEY_AIRCRAFT_DATA = {
@@ -797,7 +799,8 @@ const app = Vue.createApp({
       emergency:EMERGENCY_DATA, sop:SOP_DATA, limits:LIMITS_DATA, startup:STARTUP_DATA,
       cgenv:CGENV, dash:DASH_LIMITS,
       emSel:null, sopSel:null, phaseSel:null, done:{}, q:'', uq:'',
-      brief:{mission:'Training', pax:0, crew:2, notes:''}, briefCopied:false
+      brief:{mission:'Training', pax:0, crew:2, notes:''}, briefCopied:false,
+      weather: WEATHER_STATE
     };
   },
   computed:{
@@ -822,6 +825,9 @@ const app = Vue.createApp({
     doneCount(){ return Object.values(this.done).filter(Boolean).length; },
     overallDone(){ return this.totalSteps? Math.round(this.doneCount/this.totalSteps*100) : 0; },
     allComplete(){ return this.totalSteps>0 && this.doneCount===this.totalSteps; },
+    weatherQueryUnit(){
+      return this.weather && this.weather._qUnit ? this.weather._qUnit : '';
+    },
     uniResults(){
       const s=this.uq.trim().toLowerCase(); if(!s) return [];
       return this.filtered(s).map(r=>({src:r.src,cat:r.cat,item:r.item}));
@@ -1180,7 +1186,54 @@ const app = Vue.createApp({
         navigator.clipboard.writeText(plain).catch(()=>{});
       }
     },
-    resetChecks(){ this.done={}; }
+    resetChecks(){ this.done={}; },
+    weatherSearch(){
+      const q = String(this.weather.query || '').trim();
+      this.weather.airports = [];
+      this.weather.error = '';
+      if (!q) return;
+      this.weather.loading = true;
+      WeatherFetcher.searchAirports(q).then(list => {
+        this.weather.loading = false;
+        this.weather.airports = list;
+        if (!list.length) this.weather.error = 'No matching airports found for "' + q + '".';
+      }).catch(() => {
+        this.weather.loading = false;
+        this.weather.error = 'Airport search failed.';
+      });
+    },
+    weatherSelect(a){
+      this.weather.selected = a;
+      this.weather.rawMetar = '';
+      this.weather.rawTaf = '';
+      this.weather.error = '';
+      this.weatherFetch();
+    },
+    weatherFetch(){
+      const st = (this.weather.selected && (this.weather.selected.icao || this.weather.selected.iata)) ? (this.weather.selected.icao || this.weather.selected.iata) : (String(this.weather.query || '').trim().toUpperCase());
+      if (!st) return;
+      this.weather.loading = true;
+      WeatherFetcher.fetchWeather(st).then(res => {
+        this.weather.loading = false;
+        this.weather.rawMetar = res.rawMetar || '';
+        this.weather.rawTaf = res.rawTaf || '';
+        this.weather.error = res.error || '';
+        this.weather.lastFetch = new Date().toLocaleString();
+        this.weather.selected = this.weather.selected || { name: st, icao: st };
+      }).catch(() => {
+        this.weather.loading = false;
+        this.weather.error = 'Weather fetch failed.';
+      });
+    },
+    weatherClear(){
+      this.weather.query = '';
+      this.weather.airports = [];
+      this.weather.selected = null;
+      this.weather.rawMetar = null;
+      this.weather.rawTaf = null;
+      this.weather.lastFetch = null;
+      this.weather.error = '';
+    }
   }
 });
 app.mount('#app');
