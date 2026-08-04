@@ -1,6 +1,6 @@
 // HUEY2 service worker — caches the app shell for full offline use.
 // Bump CACHE version to force clients to discard a stale cached shell after a new deploy.
-const CACHE = 'huey2-v12';
+const CACHE = 'huey2-v13';
 const ASSETS = [
   './',
   './index.html',
@@ -9,7 +9,6 @@ const ASSETS = [
   './dash.js',
   './emergency.js',
   './startup.js',
-  './weather-data.js',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'
