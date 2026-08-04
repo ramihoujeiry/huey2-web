@@ -649,8 +649,9 @@
       <div v-if="weather.areaWeather">
         <div class="info">
           <b>{{ weather.areaWeather.desc }}</b><br/>
-          {{ weather.areaWeather.temp }}°C · {{ weather.areaWeather.wind }} km/h {{ weather.areaWeather.windDir }}°<br/>
-          {{ weather.areaWeather.source === 'open-meteo' ? 'Area weather via Open-Meteo' : '' }}
+          Temp: {{ weather.areaWeather.temp }}°C<br/>
+          Wind: {{ weather.areaWeather.wind }} km/h from {{ weather.areaWeather.windDir }}°<br/>
+          <span class="muted">Source: Open-Meteo</span>
         </div>
       </div>
     </div>
