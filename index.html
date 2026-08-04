@@ -646,7 +646,7 @@
         </div>
       </div>
 
-      <div v-if="weather.areaWeather || weather.rawMetar || weather.rawTaf">
+      <div v-if="weather.areaWeather || weather.rawMetar">
         <div class="info" v-if="weather.areaWeather">
           <b>{{ weather.areaWeather.desc }}</b><br/>
           Temp: {{ weather.areaWeather.temp }}°C<br/>
@@ -659,11 +659,6 @@
         <div v-if="weather.rawMetar">
           <h3>METAR</h3>
           <div class="info">{{ weather.rawMetar }}</div>
-        </div>
-
-        <div v-if="weather.rawTaf">
-          <h3>TAF</h3>
-          <div class="info">{{ weather.rawTaf }}</div>
         </div>
 
         <button class="btn ghost" @click="weatherClear">Clear</button>
@@ -1252,7 +1247,6 @@ const app = Vue.createApp({
     weatherSelect(a){
       this.weather.selected = a;
       this.weather.rawMetar = '';
-      this.weather.rawTaf = '';
       this.weather.error = '';
       this.weatherFetch();
     },
@@ -1262,7 +1256,6 @@ const app = Vue.createApp({
       WeatherFetcher.fetchWeather(loc).then(res => {
         this.weather.loading = false;
         this.weather.rawMetar = res.rawMetar || '';
-        this.weather.rawTaf = res.rawTaf || '';
         this.weather.areaWeather = res.areaWeather || null;
         this.weather.error = res.error || '';
         this.weather.lastFetch = new Date().toLocaleString();
@@ -1276,7 +1269,6 @@ const app = Vue.createApp({
       this.weather.airports = [];
       this.weather.selected = null;
       this.weather.rawMetar = null;
-      this.weather.rawTaf = null;
       this.weather.areaWeather = null;
       this.weather.lastFetch = null;
       this.weather.error = '';
