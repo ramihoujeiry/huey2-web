@@ -646,22 +646,12 @@
         </div>
       </div>
 
-      <div v-if="weather.selected">
+      <div v-if="weather.areaWeather">
         <div class="info">
-          <b>{{ weather.selected.icao || weather.selected.iata || weather.selected.name }}</b><br/>
-          {{ weather.selected.name }}<br/>
-          {{ weather.lastFetch || '' }}
+          <b>{{ weather.areaWeather.desc }}</b><br/>
+          {{ weather.areaWeather.temp }}°C · {{ weather.areaWeather.wind }} km/h {{ weather.areaWeather.windDir }}°<br/>
+          {{ weather.areaWeather.source === 'open-meteo' ? 'Area weather via Open-Meteo' : '' }}
         </div>
-
-        <button class="btn" @click="weatherFetch">Refresh weather</button>
-
-        <h3>METAR</h3>
-        <div class="info">{{ weather.rawMetar || 'Not available.' }}</div>
-
-        <h3>TAF</h3>
-        <div class="info">{{ weather.rawTaf || 'Not available.' }}</div>
-
-        <button class="btn ghost" @click="weatherClear">Clear</button>
       </div>
     </div>
   </section>
@@ -1252,16 +1242,15 @@ const app = Vue.createApp({
       this.weatherFetch();
     },
     weatherFetch(){
-      const st = (this.weather.selected && (this.weather.selected.icao || this.weather.selected.iata)) ? (this.weather.selected.icao || this.weather.selected.iata) : (String(this.weather.query || '').trim().toUpperCase());
-      if (!st) return;
+      const loc = this.weather.selected || { name: String(this.weather.query || '').trim().toUpperCase() };
       this.weather.loading = true;
-      WeatherFetcher.fetchWeather(st).then(res => {
+      WeatherFetcher.fetchWeather(loc).then(res => {
         this.weather.loading = false;
         this.weather.rawMetar = res.rawMetar || '';
         this.weather.rawTaf = res.rawTaf || '';
+        this.weather.areaWeather = res.areaWeather || null;
         this.weather.error = res.error || '';
         this.weather.lastFetch = new Date().toLocaleString();
-        this.weather.selected = this.weather.selected || { name: st, icao: st };
       }).catch(() => {
         this.weather.loading = false;
         this.weather.error = 'Weather fetch failed.';
@@ -1273,6 +1262,7 @@ const app = Vue.createApp({
       this.weather.selected = null;
       this.weather.rawMetar = null;
       this.weather.rawTaf = null;
+      this.weather.areaWeather = null;
       this.weather.lastFetch = null;
       this.weather.error = '';
     }
