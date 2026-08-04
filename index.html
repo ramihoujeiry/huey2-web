@@ -1225,13 +1225,13 @@ const app = Vue.createApp({
       this.weather.error = '';
       if (!q) return;
       this.weather.loading = true;
-      WeatherFetcher.searchAirports(q).then(list => {
+      WeatherFetcher.searchAreas(q).then(list => {
         this.weather.loading = false;
         this.weather.airports = list;
-        if (!list.length) this.weather.error = 'No matching airports found for "' + q + '".';
+        if (!list.length) this.weather.error = 'No matching locations found for "' + q + '".';
       }).catch(() => {
         this.weather.loading = false;
-        this.weather.error = 'Airport search failed.';
+        this.weather.error = 'Location search failed.';
       });
     },
     weatherSelect(a){
