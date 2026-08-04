@@ -646,13 +646,27 @@
         </div>
       </div>
 
-      <div v-if="weather.areaWeather">
-        <div class="info">
+      <div v-if="weather.areaWeather || weather.rawMetar || weather.rawTaf">
+        <div class="info" v-if="weather.areaWeather">
           <b>{{ weather.areaWeather.desc }}</b><br/>
           Temp: {{ weather.areaWeather.temp }}°C<br/>
           Wind: {{ weather.areaWeather.wind }} km/h from {{ weather.areaWeather.windDir }}°<br/>
+          <span v-if="weather.areaWeather.pressure">QNH: {{ weather.areaWeather.pressure }} hPa<br/></span>
+          <span v-if="weather.areaWeather.humidity">Humidity: {{ weather.areaWeather.humidity }}%<br/></span>
           <span class="muted">Source: Open-Meteo</span>
         </div>
+
+        <div v-if="weather.rawMetar">
+          <h3>METAR</h3>
+          <div class="info">{{ weather.rawMetar }}</div>
+        </div>
+
+        <div v-if="weather.rawTaf">
+          <h3>TAF</h3>
+          <div class="info">{{ weather.rawTaf }}</div>
+        </div>
+
+        <button class="btn ghost" @click="weatherClear">Clear</button>
       </div>
     </div>
   </section>

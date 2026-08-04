@@ -63,7 +63,7 @@ const WeatherFetcher = {
 
     if (location && location.lat != null && location.lon != null) {
       try {
-        const owUrl = 'https://api.open-meteo.com/v1/forecast?latitude=' + location.lat + '&longitude=' + location.lon + '&current_weather=true&timezone=auto';
+        const owUrl = 'https://api.open-meteo.com/v1/forecast?latitude=' + location.lat + '&longitude=' + location.lon + '&current_weather=true&timezone=auto&relative_humidity=true';
         const owRes = await fetch(owUrl);
         if (owRes.ok) {
           const ow = await owRes.json();
@@ -71,11 +71,14 @@ const WeatherFetcher = {
           if (cw) {
             const codeMap = {0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Rime fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Slight rain',63:'Rain',65:'Heavy rain',71:'Slight snow',73:'Snow',75:'Heavy snow',80:'Rain showers',81:'Heavy showers',82:'Violent showers',95:'Thunderstorm',96:'Thunderstorm + hail'};
             const desc = codeMap[cw.weathercode] !== undefined ? codeMap[cw.weathercode] : ('Weather code ' + cw.weathercode);
+            const rh = (ow.current_weather && typeof ow.current_weather.relativehumidity === 'number') ? ow.current_weather.relativehumidity : null;
             out.areaWeather = {
               desc,
               temp: cw.temperature,
               wind: cw.windspeed,
               windDir: cw.winddirection,
+              pressure: cw.surface_pressure || null,
+              humidity: rh,
               elev: location.elevation || '',
               source: 'open-meteo'
             };
