@@ -621,6 +621,51 @@
     </div>
   </section>
 
+  <!-- ================= WEATHER ================= -->
+  <section v-show="tab==='WEATHER'">
+    <div class="card">
+      <h2>Weather</h2>
+      <p class="sub">Local METAR / TAF lookup — no app-specific forecast tool.</p>
+
+      <div class="err" v-if="weather.error">{{ weather.error }}</div>
+
+      <div class="field">
+        <label>Search airport or city</label>
+        <div class="row">
+          <input type="search" v-model="weather.query" @keydown.enter="weatherSearch" placeholder="e.g. Kuwait, LAX, Kuwait Intl" />
+        </div>
+      </div>
+
+      <div v-if="weather.loading" class="info">Searching…</div>
+
+      <div v-if="weather.airports.length">
+        <div class="card" style="padding:10px">
+          <div class="list-btn" v-for="a in weather.airports" :key="(a.icao||'')+(a.iata||'')" @click="weatherSelect(a)">
+            <b>{{ a.icao || a.iata || '—' }}</b> {{ a.name }}
+          </div>
+        </div>
+      </div>
+
+      <div v-if="weather.selected">
+        <div class="info">
+          <b>{{ weather.selected.icao || weather.selected.iata || weather.selected.name }}</b><br/>
+          {{ weather.selected.name }}<br/>
+          {{ weather.lastFetch || '' }}
+        </div>
+
+        <button class="btn" @click="weatherFetch">Refresh weather</button>
+
+        <h3>METAR</h3>
+        <div class="info">{{ weather.rawMetar || 'Not available.' }}</div>
+
+        <h3>TAF</h3>
+        <div class="info">{{ weather.rawTaf || 'Not available.' }}</div>
+
+        <button class="btn ghost" @click="weatherClear">Clear</button>
+      </div>
+    </div>
+  </section>
+
   <footer>
     For planning reference only. Always cross-check against the current aircraft flight manual and
     your unit's approved performance data before flight. Not a substitute for official publications.
@@ -825,9 +870,6 @@ const app = Vue.createApp({
     doneCount(){ return Object.values(this.done).filter(Boolean).length; },
     overallDone(){ return this.totalSteps? Math.round(this.doneCount/this.totalSteps*100) : 0; },
     allComplete(){ return this.totalSteps>0 && this.doneCount===this.totalSteps; },
-    weatherQueryUnit(){
-      return this.weather && this.weather._qUnit ? this.weather._qUnit : '';
-    },
     uniResults(){
       const s=this.uq.trim().toLowerCase(); if(!s) return [];
       return this.filtered(s).map(r=>({src:r.src,cat:r.cat,item:r.item}));
