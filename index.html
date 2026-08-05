@@ -693,49 +693,67 @@ const WEATHER_STATE = {
   rawMetar: null, rawTaf: null, qnh: null, windKt: null, windDir: '', tempC: null,
   areaWeather: null, lastFetch: null, error: ''
 };
-// Known airfields: name keyword -> ICAO. Lets the geocoder-less UI reach NOAA METAR/TAF.
-const AIRPORT_ICAO = {
-  'john f. kennedy': 'KJFK', 'kennedy': 'KJFK', 'jfk': 'KJFK',
-  'laguardia': 'KLGA', 'la guardia': 'KLGA',
-  'newark': 'KEWR',
-  'beirut': 'OLBA', 'rafic hariri': 'OLBA', 'beirut-rafic': 'OLBA', 'olra': 'OLRA', 'rayak': 'OLRA',
-  'london heathrow': 'EGLL', 'heathrow': 'EGLL',
-  'paris charles': 'LFPG', 'charles de gaulle': 'LFPG', 'de gaulle': 'LFPG',
-  'frankfurt': 'EDDF', 'amsterdam schiphol': 'EHAM', 'schiphol': 'EHAM',
-  'dubai': 'OMDB', 'dxb': 'OMDB',
-  'doha': 'OTHH', 'hamad': 'OTHH',
-  'abu dhabi': 'OMAA',
-  'istanbul': 'LTFM', 'ataturk': 'LTFM',
-  'cairo': 'HECA',
-  'amman': 'OJAI', 'queen alia': 'OJAI',
-  'tel aviv': 'LLBG', 'ben gurion': 'LLBG',
-  'cyrus': 'OLBA',
-};
+// Known airfields with coordinates. Lets the UI offer them as selectable options and
+// fall back to Open-Meteo (QNH/wind/temp) when NOAA has no METAR/TAF for the station.
+const AIRPORTS = [
+  { icao:'KJFK', name:'John F. Kennedy Intl', lat:40.6413, lon:-73.7781, kw:['jfk','kennedy','john f. kennedy'] },
+  { icao:'KLGA', name:'LaGuardia', lat:40.7769, lon:-73.8739, kw:['laguardia','la guardia'] },
+  { icao:'KEWR', name:'Newark Liberty', lat:40.6925, lon:-74.1687, kw:['newark'] },
+  { icao:'OLBA', name:'Beirut Rafic Hariri Intl', lat:33.89332, lon:35.50157, kw:['beirut','rafic hariri','olba','cyrus','beirut-rafic'] },
+  { icao:'OLRA', name:'Rayak Air Base', lat:33.85083, lon:36.01167, kw:['rayak','olra','riyaq'] },
+  { icao:'OLKA', name:'Rene Mouawad (Kleyate) Air Base', lat:34.5893, lon:36.0113, kw:['kleyate','klayaat','kleiat','kleiyat','olka','rene mouawad'] },
+  { icao:'OLHA', name:'Hamat Air Base', lat:34.28611, lon:35.69139, kw:['hamat','olha','olha hamat'] },
+  { icao:'EGLL', name:'London Heathrow', lat:51.4700, lon:-0.4543, kw:['heathrow','london heathrow'] },
+  { icao:'LFPG', name:'Paris Charles de Gaulle', lat:49.0097, lon:2.5479, kw:['paris charles','charles de gaulle','de gaulle'] },
+  { icao:'EDDF', name:'Frankfurt', lat:50.0379, lon:8.5622, kw:['frankfurt'] },
+  { icao:'EHAM', name:'Amsterdam Schiphol', lat:52.3105, lon:4.7683, kw:['amsterdam schiphol','schiphol'] },
+  { icao:'OMDB', name:'Dubai Intl', lat:25.2532, lon:55.3657, kw:['dubai','dxb'] },
+  { icao:'OTHH', name:'Doha Hamad', lat:25.2731, lon:51.6080, kw:['doha','hamad'] },
+  { icao:'OMAA', name:'Abu Dhabi', lat:24.4330, lon:54.6512, kw:['abu dhabi'] },
+  { icao:'LTFM', name:'Istanbul', lat:41.2611, lon:28.7420, kw:['istanbul','ataturk'] },
+  { icao:'HECA', name:'Cairo', lat:30.1219, lon:31.4056, kw:['cairo'] },
+  { icao:'OJAI', name:'Amman Queen Alia', lat:31.7226, lon:35.9932, kw:['amman','queen alia'] },
+  { icao:'LLBG', name:'Tel Aviv Ben Gurion', lat:32.0114, lon:34.8867, kw:['tel aviv','ben gurion'] },
+];
+const AIRPORT_BY_ICAO = {};
+AIRPORTS.forEach(a => { AIRPORT_BY_ICAO[a.icao] = a; });
 function icaoFromQuery(q) {
   const s = (q || '').trim();
   if (/^[A-Z]{4}$/.test(s.toUpperCase())) return s.toUpperCase();   // direct ICAO/IATA typed
   const low = s.toLowerCase();
-  if (AIRPORT_ICAO[low]) return AIRPORT_ICAO[low];
-  for (const k in AIRPORT_ICAO) if (low.includes(k)) return AIRPORT_ICAO[k];
+  for (const a of AIRPORTS) {
+    if (a.icao.toLowerCase() === low) return a.icao;
+    if (a.kw.includes(low)) return a.icao;
+    if (a.kw.some(k => low.includes(k))) return a.icao;
+  }
   return '';
 }
 const WeatherFetcher = {
   async searchAreas(query) {
     const q = (query || '').trim();
     if (q.length < 2) return [];
-    // Direct ICAO/IATA (4 letters) — return a single pseudo-result so the user can pick it
+    const out = [];
+    // Airport/air-base matches from the built-in list (Rayak, Kleyate, Hamat, etc.)
     const direct = icaoFromQuery(q);
-    if (direct && /^[A-Z]{4}$/.test(direct)) {
-      return [{ name: direct + ' (station)', icao: direct, iata: '', lat: null, lon: null, country: '' }];
+    if (direct && /^[A-Z]{4}$/.test(direct) && AIRPORT_BY_ICAO[direct]) {
+      const a = AIRPORT_BY_ICAO[direct];
+      out.push({ name: a.name + ' (' + a.icao + ')', icao: a.icao, iata: '', lat: a.lat, lon: a.lon, country: 'Airport' });
+    } else if (!direct) {
+      // free-text: include any airport whose keywords match the query
+      const low = q.toLowerCase();
+      for (const a of AIRPORTS) {
+        if (a.kw.some(k => k.includes(low) || low.includes(k))) {
+          out.push({ name: a.name + ' (' + a.icao + ')', icao: a.icao, iata: '', lat: a.lat, lon: a.lon, country: 'Airport' });
+        }
+      }
     }
+    // Geocoder (cities) — also resolves an ICAO when the place name matches one
     const url = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) + '&count=10&language=en&format=json';
     const res = await fetch(url);
     if (!res.ok) throw new Error('Geocoding failed');
     const data = await res.json();
-    const out = [];
     if (data && data.results) {
       for (const r of data.results) {
-        const nameLow = (r.name || '').toLowerCase();
         const icao = icaoFromQuery(r.name) || '';
         out.push({
           name: [r.name, r.admin1, r.country].filter(Boolean).join(', '),
@@ -764,6 +782,12 @@ const WeatherFetcher = {
           if (w.temp_c != null) out.tempC = w.temp_c;
         }
       } catch (e) { /* non-fatal */ }
+    }
+    // If this is a known airfield without coordinates (e.g. typed ICAO only), use its stored coords
+    if (station && AIRPORT_BY_ICAO[station] && (!location || location.lat == null || location.lon == null)) {
+      const a = AIRPORT_BY_ICAO[station];
+      location = location || {};
+      location.lat = a.lat; location.lon = a.lon;
     }
     // Always try to get QNH/wind/temp, even when only a TAF exists (Open-Meteo MSL estimate)
     if ((!out.qnh || out.windKt == null || out.tempC == null) && location && location.lat != null && location.lon != null) {
