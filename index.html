@@ -692,19 +692,53 @@ const WEATHER_STATE = {
   query: '', airports: [], selected: null, loading: false,
   rawMetar: null, areaWeather: null, lastFetch: null, error: ''
 };
+// Known airfields: name keyword -> ICAO. Lets the geocoder-less UI reach NOAA METAR/TAF.
+const AIRPORT_ICAO = {
+  'john f. kennedy': 'KJFK', 'kennedy': 'KJFK', 'jfk': 'KJFK',
+  'laguardia': 'KLGA', 'la guardia': 'KLGA',
+  'newark': 'KEWR',
+  'beirut': 'OLBA', 'rafic hariri': 'OLBA', 'beirut-rafic': 'OLBA',
+  'london heathrow': 'EGLL', 'heathrow': 'EGLL',
+  'paris charles': 'LFPG', 'charles de gaulle': 'LFPG', 'de gaulle': 'LFPG',
+  'frankfurt': 'EDDF', 'amsterdam schiphol': 'EHAM', 'schiphol': 'EHAM',
+  'dubai': 'OMDB', 'dxb': 'OMDB',
+  'doha': 'OTHH', 'hamad': 'OTHH',
+  'abu dhabi': 'OMAA',
+  'istanbul': 'LTFM', 'ataturk': 'LTFM',
+  'cairo': 'HECA',
+  'amman': 'OJAI', 'queen alia': 'OJAI',
+  'tel aviv': 'LLBG', 'ben gurion': 'LLBG',
+  'cyrus': 'OLBA',
+};
+function icaoFromQuery(q) {
+  const s = (q || '').trim();
+  if (/^[A-Z]{4}$/.test(s.toUpperCase())) return s.toUpperCase();   // direct ICAO/IATA typed
+  const low = s.toLowerCase();
+  if (AIRPORT_ICAO[low]) return AIRPORT_ICAO[low];
+  for (const k in AIRPORT_ICAO) if (low.includes(k)) return AIRPORT_ICAO[k];
+  return '';
+}
 const WeatherFetcher = {
   async searchAreas(query) {
-    if (!query || query.trim().length < 2) return [];
-    const url = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(query.trim()) + '&count=10&language=en&format=json';
+    const q = (query || '').trim();
+    if (q.length < 2) return [];
+    // Direct ICAO/IATA (4 letters) — return a single pseudo-result so the user can pick it
+    const direct = icaoFromQuery(q);
+    if (direct && /^[A-Z]{4}$/.test(direct)) {
+      return [{ name: direct + ' (station)', icao: direct, iata: '', lat: null, lon: null, country: '' }];
+    }
+    const url = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) + '&count=10&language=en&format=json';
     const res = await fetch(url);
     if (!res.ok) throw new Error('Geocoding failed');
     const data = await res.json();
     const out = [];
     if (data && data.results) {
       for (const r of data.results) {
+        const nameLow = (r.name || '').toLowerCase();
+        const icao = icaoFromQuery(r.name) || '';
         out.push({
           name: [r.name, r.admin1, r.country].filter(Boolean).join(', '),
-          icao: r.icao || '', iata: r.iata || '',
+          icao: icao, iata: r.iata || '',
           lat: r.latitude, lon: r.longitude, country: r.country_code || ''
         });
       }
