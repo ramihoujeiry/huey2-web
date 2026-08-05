@@ -651,7 +651,7 @@
           <b>{{ weather.areaWeather.desc }}</b><br/>
           Temp: {{ weather.areaWeather.temp }}°C<br/>
           Wind: {{ weather.areaWeather.wind }} km/h from {{ weather.areaWeather.windDir }}°<br/>
-          <span v-if="weather.areaWeather.pressure">QNH: {{ weather.areaWeather.pressure }} hPa<br/></span>
+          <span v-if="weather.areaWeather.pressure">QNH: {{ weather.areaWeather.pressure }} mb<br/></span>
           <span v-if="weather.areaWeather.humidity">Humidity: {{ weather.areaWeather.humidity }}%<br/></span>
           <span class="muted">Source: Open-Meteo</span>
         </div>
