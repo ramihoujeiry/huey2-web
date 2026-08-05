@@ -1,0 +1,6 @@
+name = "huey2-weather"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+# Routes are served from the auto workers.dev subdomain by default.
+# No custom domain or route required.
