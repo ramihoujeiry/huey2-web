@@ -690,7 +690,8 @@
 // Inline to avoid Pages/CDN stale-cache issues for standalone JS files.
 const WEATHER_STATE = {
   query: '', airports: [], selected: null, loading: false,
-  rawMetar: null, areaWeather: null, lastFetch: null, error: ''
+  rawMetar: null, rawTaf: null, qnh: null, windKt: null, windDir: '', tempC: null,
+  areaWeather: null, lastFetch: null, error: ''
 };
 // Known airfields: name keyword -> ICAO. Lets the geocoder-less UI reach NOAA METAR/TAF.
 const AIRPORT_ICAO = {
@@ -1374,6 +1375,11 @@ const app = Vue.createApp({
       WeatherFetcher.fetchWeather(loc).then(res => {
         this.weather.loading = false;
         this.weather.rawMetar = res.rawMetar || '';
+        this.weather.rawTaf = res.rawTaf || '';
+        this.weather.qnh = res.qnh || null;
+        this.weather.windKt = res.windKt != null ? res.windKt : null;
+        this.weather.windDir = res.windDir || '';
+        this.weather.tempC = res.tempC != null ? res.tempC : null;
         this.weather.areaWeather = res.areaWeather || null;
         this.weather.error = res.error || '';
         this.weather.lastFetch = new Date().toLocaleString();
@@ -1387,6 +1393,11 @@ const app = Vue.createApp({
       this.weather.airports = [];
       this.weather.selected = null;
       this.weather.rawMetar = null;
+      this.weather.rawTaf = null;
+      this.weather.qnh = null;
+      this.weather.windKt = null;
+      this.weather.windDir = '';
+      this.weather.tempC = null;
       this.weather.areaWeather = null;
       this.weather.lastFetch = null;
       this.weather.error = '';
