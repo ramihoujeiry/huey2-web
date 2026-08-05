@@ -646,9 +646,11 @@
         </div>
       </div>
 
-      <div v-if="weather.areaWeather || weather.rawMetar || weather.rawTaf || weather.qnh">
-        <div class="info" v-if="weather.qnh">
-          <b>QNH: {{ weather.qnh }} inHg</b>
+      <div v-if="weather.areaWeather || weather.rawMetar || weather.rawTaf || weather.qnh || weather.windKt != null || weather.tempC != null">
+        <div class="info" v-if="weather.qnh || weather.windKt != null || weather.tempC != null">
+          <b v-if="weather.qnh">QNH: {{ weather.qnh }} inHg<br/></b>
+          <span v-if="weather.windKt != null">Wind: {{ weather.windDir }}° at {{ weather.windKt }} kt<br/></span>
+          <span v-if="weather.tempC != null">Temp: {{ weather.tempC }}°C<br/></span>
         </div>
 
         <div v-if="weather.rawMetar">
@@ -663,8 +665,6 @@
 
         <div class="info" v-if="weather.areaWeather && !weather.rawMetar && !weather.rawTaf">
           <b>{{ weather.areaWeather.desc }}</b><br/>
-          Temp: {{ weather.areaWeather.temp }}°C<br/>
-          Wind: {{ weather.areaWeather.wind }} km/h from {{ weather.areaWeather.windDir }}°<br/>
           <span v-if="weather.areaWeather.humidity">Humidity: {{ weather.areaWeather.humidity }}%<br/></span>
           <span class="muted">Source: Open-Meteo (no METAR/TAF for this location)</span>
         </div>
@@ -713,7 +713,7 @@ const WeatherFetcher = {
   },
   async fetchWeather(location) {
     const WORKER = 'https://huey2-weather.ramihoujeiry.workers.dev';
-    const out = { rawMetar: null, rawTaf: null, qnh: null, areaWeather: null, error: '', station: '' };
+    const out = { rawMetar: null, rawTaf: null, qnh: null, windKt: null, windDir: '', tempC: null, areaWeather: null, error: '', station: '' };
     const station = (location && location.icao) ? location.icao : ((location && location.iata) ? location.iata : '');
     if (station) {
       out.station = station;
@@ -724,6 +724,9 @@ const WeatherFetcher = {
           if (w.metar) out.rawMetar = w.metar;
           if (w.taf) out.rawTaf = w.taf;
           if (w.qnh_inhg) out.qnh = w.qnh_inhg;
+          if (w.wind_kt != null) out.windKt = w.wind_kt;
+          if (w.wind_dir) out.windDir = w.wind_dir;
+          if (w.temp_c != null) out.tempC = w.temp_c;
         }
       } catch (e) { /* non-fatal */ }
     }
@@ -744,7 +747,10 @@ const WeatherFetcher = {
               const codeMap = {0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Rime fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Slight rain',63:'Rain',65:'Heavy rain',71:'Slight snow',73:'Snow',75:'Heavy snow',80:'Rain showers',81:'Heavy showers',82:'Violent showers',95:'Thunderstorm',96:'Thunderstorm + hail'};
               const desc = codeMap[cw.weathercode] !== undefined ? codeMap[cw.weathercode] : ('Weather code ' + cw.weathercode);
               const humidity = Array.isArray(hourly.relativehumidity_2m) && hourly.relativehumidity_2m[0] != null ? Number(hourly.relativehumidity_2m[0]) : null;
-              out.areaWeather = { desc, temp: cw.temperature, wind: cw.windspeed, windDir: cw.winddirection, humidity, source: 'open-meteo' };
+              out.windKt = Math.round(cw.windspeed / 1.852);
+            out.windDir = cw.winddirection;
+            out.tempC = cw.temperature;
+            out.areaWeather = { desc, temp: cw.temperature, windKt: out.windKt, windDir: cw.winddirection, humidity, source: 'open-meteo' };
             }
           }
         }

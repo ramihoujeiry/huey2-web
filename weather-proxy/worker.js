@@ -3,7 +3,7 @@
 // Adds Access-Control-Allow-Origin so the static github.io PWA can call it.
 //
 // Endpoints:
-//   GET /weather?ids=OLBA   -> combined { station, metar, taf, qnh_inhg, error }
+//   GET /weather?ids=OLBA   -> combined { station, metar, taf, qnh_inhg, wind_kt, wind_dir, temp_c, source, error }
 //   GET /metar?ids=OLBA     -> raw METAR text
 //   GET /taf?ids=OLBA       -> raw TAF text
 
@@ -19,12 +19,32 @@ function corsHeaders() {
 }
 
 function parseQnhInHg(raw) {
-  // METAR encodes altimeter as A#### where #### is inches+hundredths, e.g. A2983 -> 29.83
-  if (!raw) return null;
-  const m = raw.match(/\bA(\d{4})\b/);
-  if (!m) return null;
-  const v = parseInt(m[1], 10);
-  return (v / 100).toFixed(2);
+  // US METAR: A#### = inches+hundredths, e.g. A2983 -> 29.83
+  const a = raw && raw.match(/\bA(\d{4})\b/);
+  if (a) return (parseInt(a[1], 10) / 100).toFixed(2);
+  // Intl METAR: Q#### = hPa, e.g. Q1012 -> 1012 hPa -> 29.88 inHg
+  const q = raw && raw.match(/\bQ(\d{4})\b/);
+  if (q) return (parseInt(q[1], 10) / 33.8639).toFixed(2);
+  return null;
+}
+
+function parseWind(raw) {
+  // e.g. 26016KT or 19006G22KT or VRB03KT
+  const m = raw && raw.match(/\b(\d{3}|VRB)(\d{2,3})(G\d{2,3})?KT\b/);
+  if (m) {
+    return { dir: m[1] === "VRB" ? "VRB" : m[1], kt: parseInt(m[2], 10) };
+  }
+  return null;
+}
+
+function parseTemp(raw) {
+  // e.g. 21/14  or  M02/M12  (temp/dewpoint)
+  const m = raw && raw.match(/\b(M?\d{2})\/(M?\d{2})\b/);
+  if (m) {
+    const v = parseInt(m[1].replace("M", "-"), 10);
+    if (!isNaN(v)) return v;
+  }
+  return null;
 }
 
 async function fetchText(url) {
@@ -67,11 +87,16 @@ export default {
       fetchText(`${NOAA}/taf?ids=${encodeURIComponent(ids)}&format=raw`),
     ]);
 
+    const wind = metar ? parseWind(metar) : null;
     const out = {
       station: ids,
       metar: metar || null,
       taf: taf || null,
-      qnh_inhg: parseQnhInHg(metar),
+      qnh_inhg: metar ? parseQnhInHg(metar) : null,
+      wind_kt: wind ? wind.kt : null,
+      wind_dir: wind ? wind.dir : null,
+      temp_c: metar ? parseTemp(metar) : null,
+      source: metar ? "noaa-metar" : (taf ? "noaa-taf" : ""),
       error: metar || taf ? "" : "No METAR or TAF available for this station.",
     };
     return new Response(JSON.stringify(out), {
