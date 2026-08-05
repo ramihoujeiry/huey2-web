@@ -652,8 +652,6 @@
           Temp: {{ weather.areaWeather.temp }}°C<br/>
           Wind: {{ weather.areaWeather.wind }} km/h from {{ weather.areaWeather.windDir }}°<br/>
           <span v-if="weather.areaWeather.pressure">QNH: {{ (weather.areaWeather.pressure / 33.8639).toFixed(2) }} inHg<br/></span>
-          <span v-if="weather.areaWeather.elev !== '' && weather.areaWeather.elev != null">Field elev: {{ weather.areaWeather.elev }} m ({{ Math.round(weather.areaWeather.elev * 3.28084) }} ft)<br/></span>
-          <span v-if="weather.areaWeather.elev !== '' && weather.areaWeather.elev != null" class="muted">Set QNH, altimeter should read ≈ field elev on ground.</span>
           <span v-if="weather.areaWeather.humidity">Humidity: {{ weather.areaWeather.humidity }}%<br/></span>
           <span class="muted">Source: Open-Meteo</span>
         </div>
@@ -699,8 +697,7 @@ const WeatherFetcher = {
         out.push({
           name: [r.name, r.admin1, r.country].filter(Boolean).join(', '),
           icao: r.icao || '', iata: r.iata || '',
-          lat: r.latitude, lon: r.longitude, country: r.country_code || '',
-          elevation: (r.elevation != null ? Number(r.elevation) : null)
+          lat: r.latitude, lon: r.longitude, country: r.country_code || ''
         });
       }
     }
