@@ -9,9 +9,22 @@
 
 const NOAA = "https://aviationweather.gov/api/data";
 
-function corsHeaders() {
+// Only the deployed PWA origin (+ localhost for dev) may call this proxy.
+const ALLOWED_ORIGINS = new Set([
+  "https://ramihoujeiry.github.io",
+  "http://localhost:8000",
+  "http://127.0.0.1:8000",
+  "null", // file:// PWA testing
+]);
+
+// Airport/area ids: 3-4 letter ICAO codes, comma-separated. Anything else is rejected.
+const IDS_RE = /^[A-Z0-9,\s]{3,60}$/i;
+
+function corsHeaders(origin) {
+  const allowed = ALLOWED_ORIGINS.has(origin) ? origin : null;
   return {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": allowed || "null",
+    "Vary": "Origin",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
     "Access-Control-Allow-Headers": "*",
     "Cache-Control": "no-store",
@@ -61,15 +74,16 @@ async function fetchText(url) {
 export default {
   async fetch(request) {
     const url = new URL(request.url);
+    const origin = request.headers.get("Origin") || "null";
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: corsHeaders() });
+      return new Response(null, { status: 204, headers: corsHeaders(origin) });
     }
 
     const ids = (url.searchParams.get("ids") || "").toUpperCase().trim();
-    if (!ids) {
-      return new Response(JSON.stringify({ error: "Missing ids parameter" }), {
+    if (!ids || !IDS_RE.test(ids)) {
+      return new Response(JSON.stringify({ error: "Missing or invalid ids parameter" }), {
         status: 400,
-        headers: { ...corsHeaders(), "Content-Type": "application/json" },
+        headers: { ...corsHeaders(origin), "Content-Type": "application/json" },
       });
     }
 
@@ -78,7 +92,7 @@ export default {
     if (path === "/metar" || path === "/taf") {
       const kind = path === "/metar" ? "metar" : "taf";
       const txt = await fetchText(`${NOAA}/${kind}?ids=${encodeURIComponent(ids)}&format=raw`);
-      return new Response(txt, { status: 200, headers: { ...corsHeaders(), "Content-Type": "text/plain; charset=utf-8" } });
+      return new Response(txt, { status: 200, headers: { ...corsHeaders(origin), "Content-Type": "text/plain; charset=utf-8" } });
     }
 
     // default: combined /weather
@@ -101,7 +115,7 @@ export default {
     };
     return new Response(JSON.stringify(out), {
       status: 200,
-      headers: { ...corsHeaders(), "Content-Type": "application/json; charset=utf-8" },
+      headers: { ...corsHeaders(origin), "Content-Type": "application/json; charset=utf-8" },
     });
   },
 };

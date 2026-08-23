@@ -1,14 +1,18 @@
 // HUEY2 service worker — caches the app shell for full offline use.
 // Bump CACHE version to force clients to discard a stale cached shell after a new deploy.
-const CACHE = 'huey2-v25';
+const CACHE = 'huey2-v27';
+// Asset versioning: bump ASSET_VER on every deploy (or set it to the deploy commit SHA).
+// Combined with the CACHE name this guarantees clients pick up changed files after one reload.
+const ASSET_VER = 'v27';
+const V = f => './' + f + '?v=' + ASSET_VER;
 const ASSETS = [
   './',
   './index.html',
-  './vue.global.prod.js',
-  './cgenv.js',
-  './dash.js',
-  './emergency.js',
-  './startup.js',
+  V('vue.global.prod.js'),
+  V('cgenv.js'),
+  V('dash.js'),
+  V('emergency.js'),
+  V('startup.js'),
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png'

@@ -52,7 +52,7 @@ function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
   const ppcSec = sections.find(s => /PPC — Performance/.test(s.textContent));
   const paSec  = sections.find(s => /Power Assurance/.test(s.textContent));
   const cgSec  = sections.find(s => /Weight & Balance/.test(s.textContent));
-  const cvSec  = sections.find(s => /Pressure unit converter/.test(s.textContent));
+  const cvSec  = sections.find(s => /Unit converter/.test(s.textContent));
 
   log('PPC section present', !!ppcSec, 'true');
   log('PA section present', !!paSec, 'true');

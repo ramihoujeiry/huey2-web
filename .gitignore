@@ -3,5 +3,8 @@ node_modules/
 __pycache__/
 *.txt
 *.png
-shot_*.py
-live_shot.png
+!icon-*.png
+shot_*
+_frag_*
+nul
+dev/
