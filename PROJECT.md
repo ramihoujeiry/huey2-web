@@ -30,7 +30,7 @@ reference built from the flight manual and SQN training guide.
 - `weather-proxy/worker.js` — Cloudflare Worker proxy to NOAA Aviation Weather Center
   (`huey2-weather.ramihoujeiry.workers.dev`). CORS is locked to the github.io origin
   (+ localhost dev); `ids` must match ICAO-code format or the request is rejected with 400.
-- `sw.js` — service worker. **Cache name `huey2-v26`, asset version `ASSET_VER='v26'`** —
+- `sw.js` — service worker. **Cache name `huey2-v27`, asset version `ASSET_VER='v27'`** —
   bump BOTH on every deploy to invalidate stale client caches. `index.html` = network-first
   (fresh deploys show immediately); static assets = cache-first with `?v=` query strings
   (offline). On `activate`, old caches deleted.
