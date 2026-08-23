@@ -1,0 +1,25 @@
+const path = require('path');
+const { chromium } = require(path.join(process.env.APPDATA, 'npm/node_modules/@playwright/mcp/node_modules/playwright'));
+(async () => {
+  const b = await chromium.launch({ executablePath: 'C:/Users/USER/AppData/Local/ms-playwright/chromium-1234/chrome-win64/chrome.exe' });
+  const ctx = await b.newContext();
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on('pageerror', e => errs.push(e.message));
+  await page.goto('http://localhost:8123/index.html', { waitUntil: 'networkidle' });
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await ctx.setOffline(true);
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForTimeout(1500);
+  const mounted = await page.evaluate(() => (document.querySelector('#app')||{innerText:''}).innerText.length > 100);
+  const tabs = await page.locator('[role="tab"]').count();
+  console.log((mounted?'PASS':'FAIL') + ' - offline reload renders app');
+  console.log((tabs>=12?'PASS':'FAIL') + ' - 12 tabs offline (' + tabs + ')');
+  await page.click('#tabbtn-EM');
+  await page.waitForTimeout(300);
+  const qc = await page.locator('.quick-btn').count();
+  console.log((qc>=5?'PASS':'FAIL') + ' - quick actions render offline (' + qc + ')');
+  console.log((errs.length===0?'PASS':'FAIL') + ' - no page errors offline');
+  if (errs.length) console.log(errs.join('\n'));
+  await b.close();
+})().catch(e => { console.error('ERR', e.message); process.exit(1); });
