@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#1c1f26" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com https://huey2-weather.ramihoujeiry.workers.dev https://metar.vatsim.net; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
 <link rel="manifest" href="manifest.webmanifest" />
@@ -13,7 +13,10 @@
     --bg:#15181e; --panel:#222831; --panel2:#2b323d; --ink:#eef2f7; --muted:#a8b2c1;
     --accent:#5b6b2a; --accent2:#7d8c3e; --blue:#4ea1ff; --orange:#ff9f1c; --red:#ff5a5a;
     --amber:#ffb020; --green:#3a7d4f; --line:#353d49; --err:#ffb3b3; --errbg:#3a2020;
+    --ok:#5fd08a; --cg:#f25b00;
     --shadow:0 6px 20px rgba(0,0,0,.35);
+    /* Type scale: caption / small / body / lead / title */
+    --fs-caption:.72rem; --fs-small:.78rem; --fs-body:.86rem; --fs-lead:.95rem; --fs-title:1.3rem;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
@@ -21,22 +24,24 @@
     font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
   .wrap{max-width:760px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 28px)}
   header.app{text-align:center;margin-bottom:12px}
-  header.app h1{font-size:1.3rem;margin:0;letter-spacing:.6px;font-weight:800}
-  header.app p{margin:3px 0 0;color:var(--muted);font-size:.7rem}
+  header.app h1{font-size:var(--fs-title);margin:0;letter-spacing:.6px;font-weight:800}
+  header.app p{margin:3px 0 0;color:var(--muted);font-size:var(--fs-caption)}
 
   /* Tab bar */
-  .tabs{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;gap:6px;background:var(--bg);
-    padding:8px 0 10px;border-bottom:1px solid var(--line)}
-  .tab-btn{flex:1 1 auto;min-width:64px;padding:11px 6px;border:1px solid var(--line);border-radius:11px;
-    background:var(--panel);color:var(--muted);font-weight:700;font-size:.78rem;cursor:pointer;
-    transition:background .15s,color .15s,border-color .15s}
-  .tab-btn:hover{color:var(--ink)}
-  .tab-btn:active{transform:scale(.97)}
-  .tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent2)}
+  .tabs{position:sticky;top:0;z-index:10;display:flex;flex-wrap:nowrap;gap:6px;background:var(--bg);
+    padding:8px 0 10px;border-bottom:1px solid var(--line);overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab-btn{flex:1 0 auto;padding:11px 14px;border:1px solid var(--line);border-radius:11px;
+    background:var(--panel);color:var(--muted);font-weight:700;font-size:var(--fs-small);cursor:pointer;
+    white-space:nowrap;transition:background .18s,color .18s,border-color .18s,transform .12s,box-shadow .18s}
+  .tab-btn:hover{color:var(--ink);border-color:var(--accent2)}
+  .tab-btn:active{transform:scale(.96)}
+  .tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent2);box-shadow:0 2px 10px rgba(125,140,62,.25)}
   /* semantic tab colors */
-  button.tab-btn:nth-child(5).active{background:#1f5e3a;color:#bff5d6;border-color:#3dbd77}          /* Startup = green */
-  button.tab-btn:nth-child(6).active{background:var(--amber);color:#1a1200;border-color:#ffc24d}   /* Emergency = amber */
-  button.tab-btn:nth-child(7).active{background:#23415e;color:#cfe6ff;border-color:var(--blue)}      /* Squadron SOP = blue */
+  .tab-btn.tab-start.active{background:#1f5e3a;color:#bff5d6;border-color:#3dbd77;box-shadow:0 2px 10px rgba(61,189,119,.22)}     /* Startup = green */
+  .tab-btn.tab-em.active{background:var(--amber);color:#1a1200;border-color:#ffc24d;box-shadow:0 2px 10px rgba(255,176,32,.22)}   /* Emergency = amber */
+  .tab-btn.tab-sop.active{background:#23415e;color:#cfe6ff;border-color:var(--blue);box-shadow:0 2px 10px rgba(78,161,255,.22)}    /* Squadron SOP = blue */
 
   /* --- Accessibility: visible keyboard focus everywhere --- */
   :where(button,a,input,select,[tabindex]):focus-visible{
@@ -51,8 +56,8 @@
   /* --- Responsive layout fixes (mobile / tablet) --- */
   @media (max-width:480px){
     .wrap{padding-left:10px;padding-right:10px}
-    .tabs{gap:4px}
-    .tab-btn{flex:1 1 calc(33.3% - 4px);min-width:0;font-size:.72rem;padding:9px 4px}
+    .tabs{gap:5px}
+    .tab-btn{font-size:var(--fs-caption);padding:9px 11px}
     header.app h1{font-size:1.08rem}
     .card{padding:12px;border-radius:13px}
     .row{flex-wrap:wrap}
@@ -63,22 +68,20 @@
     .wx-viz{flex-direction:column;text-align:center}
     .quick-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
   }
-  @media (min-width:481px) and (max-width:820px){
-    .tab-btn{flex:1 1 calc(25% - 6px)}
-  }
-
   .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;
-    padding:16px;margin:14px 0;box-shadow:var(--shadow)}
+    padding:16px;margin:14px 0;box-shadow:var(--shadow);transition:border-color .18s}
   .card h2{font-size:1.1rem;margin:0 0 3px;font-weight:800}
   .card h3{font-size:.92rem;margin:16px 0 8px;color:var(--accent2);font-weight:700;letter-spacing:.3px}
-  .card .sub{color:var(--muted);font-size:.7rem;margin:0 0 10px}
-  hr{border:0;border-top:1px dashed var(--accent2);margin:18px 0}
+  .card .sub{color:var(--muted);font-size:var(--fs-caption);margin:0 0 10px;line-height:1.55}
+  hr{border:0;border-top:1px solid var(--line);margin:18px 0}
 
   .field{margin:10px 0}
-  .field > label{display:block;font-size:.74rem;color:var(--muted);margin-bottom:5px;font-weight:600;letter-spacing:.3px}
-  input[type=number],input[type=search],select{width:100%;padding:12px 14px;font-size:1rem;border-radius:11px;
-    border:1px solid var(--line);background:var(--panel2);color:var(--ink);appearance:none}
-  input[type=number]:focus,input[type=search]:focus,select:focus{outline:2px solid var(--accent2);border-color:var(--accent2)}
+  .field > label{display:block;font-size:var(--fs-small);color:var(--muted);margin-bottom:5px;font-weight:600;letter-spacing:.3px}
+  input[type=number],input[type=search],select,textarea{width:100%;padding:12px 14px;font-size:1rem;border-radius:11px;
+    border:1px solid var(--line);background:var(--panel2);color:var(--ink);appearance:none;
+    font-family:inherit;transition:border-color .18s,box-shadow .18s}
+  textarea{resize:vertical;min-height:64px;line-height:1.55}
+  input[type=number]:focus,input[type=search]:focus,select:focus,textarea:focus{outline:2px solid var(--accent2);border-color:var(--accent2);box-shadow:0 0 0 3px rgba(125,140,62,.18)}
   .row{display:flex;gap:8px}
   .row > *{flex:1}
   .row .unit{display:flex;align-items:center;gap:6px}
@@ -86,16 +89,16 @@
 
   .result{background:var(--panel2);border:1px solid var(--line);border-radius:11px;
     padding:11px 13px;margin:8px 0}
-  .result .lab{font-size:.72rem;color:var(--muted)}
+  .result .lab{font-size:var(--fs-caption);color:var(--muted)}
   .result .val{font-size:1.3rem;font-weight:800;color:var(--blue)}
   .result .val.warn{color:var(--orange)}
   .result .val.danger{color:var(--red)}
-  .result .val.good{color:#5fd08a}
+  .result .val.good{color:var(--ok)}
 
   .btn{display:inline-block;width:100%;padding:14px;border:0;border-radius:11px;
-    background:var(--accent);color:#fff;font-weight:800;font-size:.95rem;cursor:pointer;margin-top:10px;
-    transition:filter .15s,transform .1s}
-  .btn:hover{filter:brightness(1.12)}
+    background:var(--accent);color:#fff;font-weight:800;font-size:var(--fs-lead);cursor:pointer;margin-top:10px;
+    transition:filter .15s,transform .12s,box-shadow .15s}
+  .btn:hover{filter:brightness(1.12);box-shadow:0 4px 14px rgba(91,107,42,.30)}
   .btn:active{transform:scale(.98);filter:brightness(1.1)}
   .btn.ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line);font-weight:700}
   .btn[disabled]{opacity:.55;cursor:not-allowed;filter:none}
@@ -122,8 +125,9 @@
 
   /* Emergency / SOP drill-down */
   .list-btn{display:block;width:100%;text-align:left;padding:13px 14px;margin:6px 0;border:1px solid var(--line);
-    border-radius:11px;background:var(--panel2);color:var(--ink);font-size:.86rem;font-weight:600;cursor:pointer;
-    transition:background .15s,transform .1s}
+    border-radius:11px;background:var(--panel2);color:var(--ink);font-size:var(--fs-body);font-weight:600;cursor:pointer;
+    font-family:inherit;transition:background .15s,transform .1s,border-color .15s,color .15s}
+  .list-btn:hover{border-color:var(--accent2);background:#323b49}
   .list-btn:active{background:var(--accent);color:#fff;transform:scale(.99)}
   .tag{font-size:.76rem;font-weight:700;border-radius:10px;padding:10px 12px;margin:8px 0;line-height:1.45;
     border-left:4px solid transparent;text-align:left}
@@ -145,14 +149,20 @@
   /* --- Search filter presets (quick chips) --- */
   .chip-row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
   .chip{background:#232a35;border:1px solid var(--line);color:#c6cfdb;border-radius:999px;
-    padding:5px 12px;font-size:.74rem;font-weight:700;cursor:pointer}
-  .chip:active{background:#2f3948}
+    padding:5px 12px;font-size:var(--fs-small);font-weight:700;cursor:pointer;font-family:inherit;
+    transition:background .15s,border-color .15s,color .15s}
+  .chip:hover{background:#2f3948;border-color:var(--accent2);color:var(--ink)}
+  .chip:active{background:#39445a}
+  .chip.chip-clear{color:#ff8a8a;border-color:#5a2a2a}
+  .chip.chip-clear:hover{background:#3a2020;color:#ffb3b3}
   /* --- Emergency one-tap quick actions --- */
   .quick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:12px 0}
   .quick-btn{background:#33161c;border:1px solid #5a2a30;color:#ffb3b3;border-radius:12px;padding:11px 10px;
-    font-weight:800;font-size:.78rem;line-height:1.25;cursor:pointer;text-align:center}
-  .quick-btn small{display:block;font-weight:600;color:#d99;font-size:.64rem;margin-top:3px}
-  .quick-btn:active{background:#45202a}
+    font-weight:800;font-size:var(--fs-small);line-height:1.25;cursor:pointer;text-align:center;font-family:inherit;
+    transition:background .15s,transform .12s,border-color .15s}
+  .quick-btn small{display:block;font-weight:600;color:#d99;font-size:.68rem;margin-top:3px}
+  .quick-btn:hover{background:#45202a;border-color:#8a3a44;transform:translateY(-1px)}
+  .quick-btn:active{background:#572634;transform:translateY(0) scale(.98)}
   /* --- Weather visualization --- */
   .wx-viz{display:flex;gap:14px;align-items:center;margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:12px;background:#1b2029}
   .wx-wind{flex:0 0 auto;text-align:center;font-size:.68rem;color:#a8b2c1;font-weight:700}
@@ -166,16 +176,17 @@
   table.lim td:last-child{color:var(--ink);font-weight:700}
 
   /* Startup interactive checklist */
-  .phase-card{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;margin:10px 0;cursor:pointer;transition:border-color .15s,transform .1s}
+  .phase-card{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:12px 14px;margin:10px 0;cursor:pointer;transition:border-color .15s,transform .12s,box-shadow .15s}
+  .phase-card:hover{border-color:var(--accent2);box-shadow:0 3px 12px rgba(0,0,0,.25)}
   .phase-card:active{transform:scale(.99)}
   .phase-row{display:flex;justify-content:space-between;align-items:center}
   .phase-title{font-weight:800;font-size:.95rem}
   .phase-src{color:var(--muted);font-size:.7rem;margin-top:2px}
   .phase-pct{font-weight:800;font-size:1rem;color:var(--accent2)}
-  .phase-pct.done{color:#5fd08a}
+  .phase-pct.done{color:var(--ok)}
   .pbar{height:8px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:10px}
   .pbar.big{height:12px;margin:14px 0 6px}
-  .pfill{height:100%;background:linear-gradient(90deg,var(--accent2),#5fd08a);transition:width .2s}
+  .pfill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--ok));transition:width .3s ease-out}
   .overall-txt{font-size:.76rem;color:var(--muted);text-align:center}
   .chk{margin:12px 0 4px;padding-left:0;list-style:none}
   .chk li{position:relative;padding:12px 14px 12px 46px;margin:10px 0;background:rgba(255,90,90,.09);
@@ -184,19 +195,35 @@
   .chk li.done{background:rgba(95,208,138,.10);border-color:#3a6b4e;color:var(--muted);text-decoration:line-through}
   .chk li::before{content:'';position:absolute;left:12px;top:50%;transform:translateY(-50%);width:22px;height:22px;
     border-radius:50%;border:2px solid #c0504d;background:transparent}
-  .chk li.done::before{content:'✓';border-color:#5fd08a;background:#5fd08a;color:#0c1f12;
+  .chk li.done::before{content:'✓';border-color:var(--ok);background:var(--ok);color:#0c1f12;
     display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:800}
   .chk li b{background:#ffe600;color:#1a1200;padding:1px 5px;border-radius:5px;font-weight:800}
   .complete-banner{background:rgba(95,208,138,.14);color:#9bf0b8;border:1px solid #3a6b4e;
     border-radius:11px;padding:12px;font-weight:800;text-align:center;margin:10px 0}
   .cgenv-svg{display:block;margin:4px 0 2px}
   .cgenv-empty{color:var(--muted);font-size:.85rem;padding:14px 0;text-align:center}
-  .cgenv-lat{color:var(--muted);font-size:.72rem;margin-top:6px}
-  .cgenv-svg{display:block;margin:4px 0 2px}
-  table.lim{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:6px}
-  table.lim td{padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:top}
-  table.lim td:last-child{text-align:right;font-weight:700;white-space:normal;overflow-wrap:anywhere}
-  .info{background:rgba(152,162,179,.10);border:1px solid var(--line);border-radius:11px;padding:12px;margin:10px 0}
+  .cgenv-lat{color:var(--muted);font-size:var(--fs-caption);margin-top:6px}
+
+  /* --- Utilities replacing inline styles --- */
+  .group-block{margin:12px 0}
+  .empty-state{margin:10px 0}
+  .src-label{font-size:.68rem;font-weight:700;letter-spacing:.3px}
+  .go-banner-nogo{background:#3a2020;color:#ffb3b3;border-color:#5a2a2a}
+  .go-item-ok{border-left:4px solid var(--green)}
+  .go-item-bad{border-left:4px solid var(--red)}
+  .go-item-na{border-left:4px solid var(--line)}
+  .go-status{font-weight:800;font-size:var(--fs-small)}
+  .go-status.ok{color:var(--ok)}
+  .go-status.bad{color:var(--red)}
+  .go-status.na{color:var(--muted)}
+  .wx-airport-list{padding:10px}
+  .grow{flex:1}
+  .result .val.val-cg{color:var(--cg)}
+  .result .val.val-ok{color:var(--ok)}
+  .val-md{font-size:1.05rem}
+  .lab-split{display:flex;justify-content:space-between;align-items:center}
+  .go-info{text-align:center;font-weight:700}
+  .brief-note{margin-top:0}
 </style>
 </head>
 <body>
@@ -212,9 +239,9 @@
     <button class="tab-btn" id="tabbtn-PA" role="tab" :aria-selected="tab==='PA'" :class="{active:tab==='PA'}"  @click="tab='PA'">Power Assurance</button>
     <button class="tab-btn" id="tabbtn-CG" role="tab" :aria-selected="tab==='CG'" :class="{active:tab==='CG'}"  @click="tab='CG'">W&amp;B / Fuel</button>
     <button class="tab-btn" id="tabbtn-CV" role="tab" :aria-selected="tab==='CV'" :class="{active:tab==='CV'}"  @click="tab='CV'">Convert</button>
-    <button class="tab-btn" id="tabbtn-START" role="tab" :aria-selected="tab==='START'" :class="{active:tab==='START'}" @click="tab='START'">Startup</button>
-    <button class="tab-btn" id="tabbtn-EM" role="tab" :aria-selected="tab==='EM'" :class="{active:tab==='EM'}"  @click="tab='EM'">Emergency</button>
-    <button class="tab-btn" id="tabbtn-SOP" role="tab" :aria-selected="tab==='SOP'" :class="{active:tab==='SOP'}" @click="tab='SOP'">SOP</button>
+    <button class="tab-btn tab-start" id="tabbtn-START" role="tab" :aria-selected="tab==='START'" :class="{active:tab==='START'}" @click="tab='START'">Startup</button>
+    <button class="tab-btn tab-em" id="tabbtn-EM" role="tab" :aria-selected="tab==='EM'" :class="{active:tab==='EM'}"  @click="tab='EM'">Emergency</button>
+    <button class="tab-btn tab-sop" id="tabbtn-SOP" role="tab" :aria-selected="tab==='SOP'" :class="{active:tab==='SOP'}" @click="tab='SOP'">SOP</button>
     <button class="tab-btn" id="tabbtn-LIM" role="tab" :aria-selected="tab==='LIM'" :class="{active:tab==='LIM'}" @click="tab='LIM'">Limits</button>
     <button class="tab-btn" id="tabbtn-US" role="tab" :aria-selected="tab==='US'" :class="{active:tab==='US'}" @click="tab='US'">Search</button>
     <button class="tab-btn" id="tabbtn-DASH" role="tab" :aria-selected="tab==='DASH'" :class="{active:tab==='DASH'}" @click="tab='DASH'">Status</button>
@@ -404,7 +431,7 @@
 
       <div class="result"><div class="lab">Total weight (lbs)</div><div class="val">{{ cg.tw || '—' }}</div></div>
       <div class="result"><div class="lab">Total moment</div><div class="val">{{ cg.tm || '—' }}</div></div>
-      <div class="result"><div class="lab">Calculated longitudinal CG</div><div class="val" :style="{color:'#f25b00'}">{{ cg.cg || '—' }}</div></div>
+      <div class="result"><div class="lab">Calculated longitudinal CG</div><div class="val val-cg">{{ cg.cg || '—' }}</div></div>
     </div>
 
     <!-- CG envelope visual plot (add-on) -->
@@ -442,7 +469,7 @@
         </div>
       </div>
       <div class="result"><div class="lab">Maximum allowed fuel weight</div>
-        <div class="val" :style="{color:'#2a623d'}">{{ cg.minFuel || '—' }}</div></div>
+        <div class="val val-ok">{{ cg.minFuel || '—' }}</div></div>
       <button class="btn ghost" @click="cgReset">Reset</button>
     </div>
   </section>
@@ -461,13 +488,13 @@
         </select>
       </div>
       <div class="row">
-        <div class="field" style="flex:1">
+        <div class="field grow">
           <label>From</label>
           <select name="cvfrom" v-model="cv.from" @change="cvConvert">
             <option v-for="u in cvUnits()" :key="u" :value="u">{{ u }}</option>
           </select>
         </div>
-        <div class="field" style="flex:1">
+        <div class="field grow">
           <label>To</label>
           <select name="cvto" v-model="cv.to" @change="cvConvert">
             <option v-for="u in cvUnits()" :key="u" :value="u">{{ u }}</option>
@@ -497,8 +524,8 @@
         <label>Search all procedures</label>
         <input type="search" v-model="q" aria-label="Search emergency and SOP procedures" placeholder="e.g. engine, tail rotor, fire, ditch, torque, NVG" />
       </div>
-      <div v-if="emCats.length===0" class="muted" style="margin:10px 0">No procedures match "{{ q }}".</div>
-      <div v-for="cat in emCats" :key="cat.cat" style="margin:12px 0">
+      <div v-if="emCats.length===0" class="muted empty-state">No procedures match "{{ q }}".</div>
+      <div v-for="cat in emCats" :key="cat.cat" class="group-block">
         <h3>{{ cat.cat }}</h3>
         <button class="list-btn" v-for="it in cat.items" :key="it.id" @click="emSel=it" v-html="hlText(it.title,q)"></button>
       </div>
@@ -520,8 +547,8 @@
         <label>Search all procedures</label>
         <input type="search" v-model="q" aria-label="Search emergency and SOP procedures" placeholder="e.g. engine, tail rotor, fire, ditch, torque, NVG" />
       </div>
-      <div v-if="sopCats.length===0" class="muted" style="margin:10px 0">No procedures match "{{ q }}".</div>
-      <div v-for="cat in sopCats" :key="cat.cat" style="margin:12px 0">
+      <div v-if="sopCats.length===0" class="muted empty-state">No procedures match "{{ q }}".</div>
+      <div v-for="cat in sopCats" :key="cat.cat" class="group-block">
         <h3>{{ cat.cat }}</h3>
         <button class="list-btn" v-for="it in cat.items" :key="it.id" @click="sopSel=it" v-html="hlText(it.title,q)"></button>
       </div>
@@ -539,7 +566,7 @@
     <div class="card">
       <h2>Operating Limits &amp; Restrictions</h2>
       <p class="sub">Source: BHT PUB-92-004-10 Ch 5.</p>
-      <div v-for="g in limits" :key="g.group" style="margin:14px 0">
+      <div v-for="g in limits" :key="g.group" class="group-block">
         <h3>{{ g.group }}</h3>
         <table class="lim">
           <tr v-for="(r,i) in g.rows" :key="i"><td>{{ r[0] }}</td><td>{{ r[1] }}</td></tr>
@@ -587,7 +614,6 @@
         </ol>
         <div class="complete-banner" v-if="phaseIsComplete(currentPhase.id)">✓ {{ currentPhase.title }} complete</div>
         <button class="btn ghost" v-if="doneCount>0" @click="resetChecks">Reset checklist</button>
-        <button class="btn ghost" @click="phaseSel=null">‹ All phases</button>
       </div>
     </div>
   </section>
@@ -599,19 +625,19 @@
       <p class="sub">Search all Emergency procedures and Squadron SOP together.</p>
       <div class="chip-row">
         <button class="chip" v-for="p in searchPresets" :key="p" @click="uq=p">{{ p }}</button>
-        <button class="chip" v-if="uq" @click="uq=''" style="color:#ff8a8a;border-color:#5a2a2a">✕ clear</button>
+        <button class="chip" v-if="uq" @click="uq=''" class="chip-clear">✕ clear</button>
       </div>
       <div class="field">
         <label>Search Emergency &amp; SOP</label>
         <input type="search" v-model="uq" aria-label="Unified search across Emergency procedures and Squadron SOP" placeholder="e.g. engine, tail rotor, fire, ditch, torque, NVG" />
       </div>
 
-      <div v-if="!uq.trim()" class="muted" style="margin:10px 0">Type to search Emergency &amp; SOP procedures</div>
+      <div v-if="!uq.trim()" class="muted empty-state">Type to search Emergency &amp; SOP procedures</div>
 
       <div v-else>
-        <div v-if="uniResults.length===0" class="muted" style="margin:10px 0">No procedures match "{{ uq }}".</div>
+        <div v-if="uniResults.length===0" class="muted empty-state">No procedures match "{{ uq }}".</div>
         <button class="list-btn" v-for="(r,i) in uniResults" :key="i" @click="openUni(r)">
-          <span class="muted" style="font-size:.68rem;font-weight:700;letter-spacing:.3px">[{{ r.src }}]</span>
+          <span class="muted src-label">[{{ r.src }}]</span>
           <span v-html="hlText(r.item.title,uq)"></span>
         </button>
       </div>
@@ -625,18 +651,16 @@
       <p class="sub">Aggregated readiness from PPC, Power Assurance &amp; W&amp;B. Verify against the flight manual.</p>
 
       <div v-if="goVerdict==='go'" class="complete-banner">✓ GO — all active checks within limits</div>
-      <div v-else-if="goVerdict==='nogo'" class="warn-banner" style="background:#3a2020;color:#ffb3b3;border-color:#5a2a2a">✗ NO-GO — see flagged items below</div>
-      <div v-else class="info" style="text-align:center;font-weight:700">Enter data in PPC / Power / W&amp;B tabs to evaluate</div>
+      <div v-else-if="goVerdict==='nogo'" class="warn-banner go-banner-nogo">✗ NO-GO — see flagged items below</div>
+      <div v-else class="info go-info">Enter data in PPC / Power / W&amp;B tabs to evaluate</div>
 
-      <div v-for="(it,i) in goItems" :key="i" class="result" :style="{borderLeft:'4px solid '+(it.status==='ok'?'#3a7d4f':it.status==='bad'?'#ff5a5a':'#353d49')}">
-        <div class="lab" style="display:flex;justify-content:space-between;align-items:center">
+      <div v-for="(it,i) in goItems" :key="i" class="result" :class="{'go-item-ok':it.status==='ok','go-item-bad':it.status==='bad','go-item-na':it.status!=='ok'&&it.status!=='bad'}">
+        <div class="lab lab-split">
           <span>{{ it.label }}</span>
-          <span style="font-weight:800;font-size:.8rem"
-                :style="{color: it.status==='ok'?'#5fd08a':it.status==='bad'?'#ff5a5a':'#a8b2c1'}">
+          <span class="go-status" :class="{ok:it.status==='ok',bad:it.status==='bad',na:it.status!=='ok'&&it.status!=='bad'}">
           {{ it.status==='ok'?'GO':it.status==='bad'?'NO-GO':'N/A' }}</span>
         </div>
-        <div class="val" :class="{good:it.status==='ok',danger:it.status==='bad'}"
-             :style="{fontSize:'1.05rem'}">{{ it.value }}</div>
+        <div class="val val-md" :class="{good:it.status==='ok',danger:it.status==='bad'}">{{ it.value }}</div>
       </div>
 
       <hr />
@@ -667,11 +691,11 @@
         </select>
       </div>
       <div class="row">
-        <div class="field" style="flex:1">
+        <div class="field grow">
           <label>Passengers (pax)</label>
           <input type="number" min="0" v-model.number="brief.pax" />
         </div>
-        <div class="field" style="flex:1">
+        <div class="field grow">
           <label>Crew count</label>
           <input type="number" min="1" v-model.number="brief.crew" />
         </div>
@@ -688,7 +712,7 @@
 
     <div class="card">
       <h3>Generated briefing</h3>
-      <p class="muted" v-if="!cg.ac" style="margin-top:0">Select aircraft in W&amp;B tab for weight/CG details.</p>
+      <p class="muted brief-note" v-if="!cg.ac">Select aircraft in W&amp;B tab for weight/CG details.</p>
       <div class="steps" v-html="briefText"></div>
     </div>
   </section>
@@ -710,8 +734,7 @@
 
       <div v-if="weather.loading" class="info" role="status" aria-live="polite">Searching…</div>
 
-      <div v-if="weather.airports.length">
-        <div class="card" style="padding:10px">
+      <div v-if="weather.airports.length" class="card wx-airport-list">
           <div class="list-btn" v-for="a in weather.airports" :key="(a.icao||'')+(a.iata||'')" :class="{busy:weather.loading}" @click="weatherSelect(a)">
             <b>{{ a.icao || a.iata || '—' }}</b> {{ a.name }}
           </div>
