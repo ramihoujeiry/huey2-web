@@ -1,9 +1,9 @@
 // HUEY2 service worker — caches the app shell for full offline use.
 // Bump CACHE version to force clients to discard a stale cached shell after a new deploy.
-const CACHE = 'huey2-v27';
+const CACHE = 'huey2-v28';
 // Asset versioning: bump ASSET_VER on every deploy (or set it to the deploy commit SHA).
 // Combined with the CACHE name this guarantees clients pick up changed files after one reload.
-const ASSET_VER = 'v27';
+const ASSET_VER = 'v28';
 const V = f => './' + f + '?v=' + ASSET_VER;
 const ASSETS = [
   './',
