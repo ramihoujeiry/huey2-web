@@ -35,6 +35,13 @@ const inlineScripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m 
 if (!inlineScripts.some(s => s.includes('Vue.createApp'))) {
   console.error('FATAL: inline app script not found'); process.exit(1);
 }
+
+/* --- Mobile type scale: page must not render small on phones --- */
+const vwMeta = (html.match(/<meta name="viewport"[^>]*>/) || [''])[0];
+check('viewport meta uses device-width at 100% zoom', /width=device-width/.test(vwMeta) && !/user-scalable\s*=\s*no/i.test(vwMeta) && !/maximum-scale\s*=\s*1/.test(vwMeta));
+check('root font is fluid (clamp), not a fixed 16px that reads small on phones', /font-size:\s*clamp\(/.test(html) && !/font-size:\s*16px;/.test(html));
+const mobileBlock = (html.match(/@media \(max-width:480px\)\{[\s\S]*?\n  \}/) || [''])[0];
+check('phone tabs keep readable label size (no caption-size shrink)', /\.tab-btn\{font-size:var\(--fs-small\)/.test(mobileBlock));
 // Run every inline script in document order (weather block defines WEATHER_STATE/WeatherFetcher).
 inlineScripts.forEach((s, i) => vm.runInContext(s, ctx, { filename: 'inline-' + i }));
 const app = ctx.__app;
