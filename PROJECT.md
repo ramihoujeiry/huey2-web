@@ -23,20 +23,25 @@ reference built from the flight manual and SQN training guide.
 ## Architecture (D:\HUEY2-web\)
 - `index.html` — single-file Vue 3.5.40 app (Vue vendored locally as `vue.global.prod.js`,
   NO CDN, so it works offline/air-gapped). Tabs: PPC, Power Assurance, W&B/Fuel,
-  Convert, Startup, Emergency, SQN XII SOP, Limits, Dash.
+  Convert, Startup, Emergency, SOP, Limits, Search, Status, Briefing, Weather (12 total).
 - `emergency.js` — `EMERGENCY_DATA` (BHT Ch9, trimmed checklist + W/C/N callout tags),
   `SOP_DATA` (SQN XII SOP, separate), `LIMITS_DATA` (BHT Ch5). Loaded via `<script>`.
 - `cgenv.js`, `dash.js`, `startup.js` — CG envelope SVG, dash gauges, startup checklist data.
 - `weather-proxy/worker.js` — Cloudflare Worker proxy to NOAA Aviation Weather Center
   (`huey2-weather.ramihoujeiry.workers.dev`). CORS is locked to the github.io origin
   (+ localhost dev); `ids` must match ICAO-code format or the request is rejected with 400.
-- `sw.js` — service worker. **Cache name `huey2-v27`, asset version `ASSET_VER='v27'`** —
+- `sw.js` — service worker. **Cache name `huey2-v31`, asset version `ASSET_VER='v31'`** —
   bump BOTH on every deploy to invalidate stale client caches. `index.html` = network-first
   (fresh deploys show immediately); static assets = cache-first with `?v=` query strings
   (offline). On `activate`, old caches deleted.
 
+## Dev & test
+- `npm start` — static dev server (`serve.js`, zero deps, PORT env honored).
+- `npm test` — XSS regression + bugfix regression (VM) + jsdom DOM smoke suite.
+- Startup checklist progress persists in `localStorage` key `huey2.startup.v1`.
+
 ## Deploy checklist
-1. Make edits; run tests (test_*.py / verify.js).
+1. Make edits; run `npm test`.
 2. Bump `CACHE` and `ASSET_VER` in `sw.js`.
 3. Commit + push to main (GitHub Pages serves from main).
 4. Verify the live app loads and the Weather tab fetches work.

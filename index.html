@@ -170,6 +170,7 @@
   /* --- Weather visualization --- */
   .wx-viz{display:flex;gap:14px;align-items:center;margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:var(--radius-md);background:#1b2029}
   .wx-wind{flex:0 0 auto;text-align:center;font-size:.68rem;color:#a8b2c1;font-weight:700}
+  .wx-arrow{display:inline-block;font-size:2rem;line-height:1;transition:transform .3s}
   .wx-stats{flex:1;display:flex;flex-direction:column;gap:8px}
   .wx-stat{font-size:.72rem;color:#a8b2c1;font-weight:700}
   .wx-bar{height:8px;border-radius:6px;background:#242b36;position:relative;margin-top:4px;overflow:hidden}
@@ -284,7 +285,7 @@
 
       <div class="field">
         <label>Fuel (lbs)</label>
-        <input type="number" v-model.number="ppc.fuel" @input="ppcCalc" />
+        <input type="number" v-model.number="ppc.fuel" @input="validateFuel" />
       </div>
       <div class="err" v-if="ppc.fuelErr">{{ ppc.fuelErr }}</div>
 
@@ -595,7 +596,8 @@
 
       <!-- phase list / progress -->
       <div v-if="!phaseSel">
-        <div class="phase-card" v-for="p in startup" :key="p.id" @click="phaseSel=p.id">
+        <div class="phase-card" v-for="p in startup" :key="p.id" role="button" tabindex="0"
+             @click="phaseSel=p.id" @keydown.enter.prevent="phaseSel=p.id" @keydown.space.prevent="phaseSel=p.id">
           <div class="phase-row">
             <div>
               <div class="phase-title">{{ p.title }}</div>
@@ -621,7 +623,10 @@
         <ol class="chk">
           <li v-for="(s,i) in currentPhase.steps" :key="i"
               :class="{done: isDone(currentPhase.id,i)}"
+              role="checkbox" :aria-checked="isDone(currentPhase.id,i)" tabindex="0"
               @click="toggleStep(currentPhase.id,i)"
+              @keydown.enter.prevent="toggleStep(currentPhase.id,i)"
+              @keydown.space.prevent="toggleStep(currentPhase.id,i)"
               v-html="boldStep(s,'')"></li>
         </ol>
         <div class="complete-banner" v-if="phaseIsComplete(currentPhase.id)">✓ {{ currentPhase.title }} complete</div>
@@ -637,7 +642,7 @@
       <p class="sub">Search all Emergency procedures and Squadron SOP together.</p>
       <div class="chip-row">
         <button class="chip" v-for="p in searchPresets" :key="p" @click="uq=p">{{ p }}</button>
-        <button class="chip" v-if="uq" @click="uq=''" class="chip-clear">✕ clear</button>
+        <button class="chip chip-clear" v-if="uq" @click="uq=''">✕ clear</button>
       </div>
       <div class="field">
         <label>Search Emergency &amp; SOP</label>
@@ -751,13 +756,13 @@
             <b>{{ a.icao || a.iata || '—' }}</b> {{ a.name }}
           </div>
         </div>
-      </div>
 
       <div v-if="weather.areaWeather || weather.rawMetar || weather.rawTaf || weather.qnh || weather.windKt != null || weather.tempC != null">
         <div class="wx-viz" v-if="weather.qnh || weather.windKt != null || weather.tempC != null">
           <div class="wx-wind">
-            <div style="font-size:2rem;transform:rotate({{ (weather.windDir||0)+180 }}deg)">➤</div>
-            <div>{{ weather.windDir||'—' }}°</div>
+            <div class="wx-arrow" v-if="wxWindRotate !== null" :style="{ transform: 'rotate(' + wxWindRotate + 'deg)' }" aria-hidden="true">➤</div>
+            <div class="wx-arrow" v-else aria-hidden="true">⟳</div>
+            <div>{{ weather.windDir || '—' }}<span v-if="wxWindRotate !== null">°</span></div>
           </div>
           <div class="wx-stats">
             <div class="wx-stat" v-if="weather.qnh">
@@ -1101,6 +1106,12 @@ const ConverterEngine = {
 /* ===== Vue app ===== */
 const app = Vue.createApp({
   data(){
+    // Restore persisted checklist progress; schema-versioned so future shape changes can migrate.
+    let savedChecks={};
+    try{
+      const s=localStorage.getItem('huey2.startup.v1');
+      if(s){ const o=JSON.parse(s); if(o && o.v===1 && typeof o.done==='object' && o.done) savedChecks=o.done; }
+    }catch(e){}
     return {
       tab:'PPC',
       AC:HUEY_AIRCRAFT_DATA,
@@ -1114,7 +1125,7 @@ const app = Vue.createApp({
       cv:{cat:'pressure',from:'hPa',in:null,out:''},
       emergency:EMERGENCY_DATA, sop:SOP_DATA, limits:LIMITS_DATA, startup:STARTUP_DATA,
       cgenv:CGENV, dash:DASH_LIMITS,
-      emSel:null, sopSel:null, phaseSel:null, done:{}, q:'', uq:'',
+      emSel:null, sopSel:null, phaseSel:null, done:savedChecks, q:'', uq:'',
       online: navigator.onLine,
       searchPresets: ['engine failure','tail rotor','fire','ditching','hydraulic','autorotation','NVG','overspeed'],
       brief:{mission:'Training', pax:0, crew:2, notes:''}, briefCopied:false,
@@ -1152,7 +1163,7 @@ const app = Vue.createApp({
                   ['fireflt','Fire — In Flight','Ch 9 · immediate'],
                   ['ditchon','Ditching — Power On','Ch 9 · over water'],
                   ['hydfail','Hydraulic Failure','Ch 9 · controls'],
-                  ['tail','Tail Rotor Failure','Ch 9 · antitorque'],
+                  ['trtotal','Tail Rotor Failure','Ch 9 · antitorque'],
                   ['xmsn','Drive System Failure','Ch 9 · rotor']];
       const out=[];
       want.forEach(([id,hint])=>{
@@ -1164,6 +1175,11 @@ const app = Vue.createApp({
     qnhHpa(){
       const q=parseFloat(this.weather.qnh);
       return isNaN(q)?null:(q/0.02953).toFixed(0);
+    },
+    wxWindRotate(){
+      // METAR wind direction in degrees; null when variable (VRB) so the arrow is replaced by a VRB glyph.
+      const d=parseFloat(this.weather.windDir);
+      return isNaN(d)?null:(d+180)%360;
     },
     wxQnhPct(){
       const q=parseFloat(this.weather.qnh); if(isNaN(q)) return 0;
@@ -1203,7 +1219,7 @@ const app = Vue.createApp({
       } else {
         const cgNum=parseFloat(c.cg);
         const minFuelBad = /autorotation/i.test(c.minFuel||'');
-        const outOfEnv = isNaN(cgNum) || cgNum<100 || cgNum>140;
+        const outOfEnv = isNaN(cgNum) || cgNum<130 || cgNum>144;
         items.push({label:'CG — '+c.cg+' vs target '+c.tgt,
                     value:(c.minFuel||'—')+(outOfEnv?' (out of envelope)':''),
                     status:(minFuelBad||outOfEnv)?'bad':'ok'});
@@ -1341,7 +1357,8 @@ const app = Vue.createApp({
     ppcCalc(){
       const p=this.ppc;
       const bw = p.ac && this.AC[p.ac] ? this.AC[p.ac].weight : 0;
-      const loadLbs = p.loadUnit==='kg' ? p.load*2.20462 : parseFloat(p.load);
+      const rawLoad = p.loadUnit==='kg' ? p.load*2.20462 : parseFloat(p.load);
+      const loadLbs = isNaN(rawLoad) ? 0 : rawLoad;
       const fuel = parseFloat(p.fuel)||0;
       p.togw = (bw+loadLbs+fuel).toFixed(0);
       p.unrounded = bw+loadLbs+fuel;
@@ -1400,7 +1417,7 @@ const app = Vue.createApp({
     paAlt(){
       const a=this.pa, ia=parseFloat(a.ia);
       if(isNaN(ia)||ia<0||ia>10000){ a.iaErr="Check indicated altitude between 0 and 10000 ft.";
-        a.mrt=a.diff=0; return; }
+        a.mrt=a.diff=null; return; }
       a.iaErr="";
       const q=a.qnhUnit==='inHg'?1:33.8639;
       a.pa=(ia+(29.92-parseFloat(a.qnh)/q)*1000).toFixed(0);
@@ -1408,19 +1425,19 @@ const app = Vue.createApp({
     },
     paTemp(){
       const a=this.pa, t=parseFloat(a.fat);
-      if(isNaN(t)||t<-20||t>50){ a.tempErr="Check temperature between -20 and 50 °C."; a.mrt=a.diff=0; }
+      if(isNaN(t)||t<-20||t>50){ a.tempErr="Check temperature between -20 and 50 °C."; a.mrt=a.diff=null; }
       else { a.tempErr=""; this.paMrt(); }
     },
     paMgt(){
       const a=this.pa, m=parseFloat(a.mgt);
-      if(isNaN(m)||m<400||m>880){ a.mgtErr="Check MGT between 400 and 880."; a.mrt=a.diff=0; }
+      if(isNaN(m)||m<400||m>880){ a.mgtErr="Check MGT between 400 and 880."; a.mrt=a.diff=null; }
       else { a.mgtErr=""; this.paMrt(); }
     },
     paMrt(){
       const a=this.pa;
       const vX=PAEngine.calX(a.fat,a.mgt);
       const mrt=PAEngine.calMRT(a.pa,vX);
-      a.mrt = mrt!==null?parseFloat(mrt.toFixed(1)):0;
+      a.mrt = mrt!==null?parseFloat(mrt.toFixed(1)):null;
       this.paDiff();
     },
     paDiff(){
@@ -1521,7 +1538,8 @@ const app = Vue.createApp({
     },
     /* Startup interactive checklist */
     isDone(pid,i){ return !!this.done[pid+':'+i]; },
-    toggleStep(pid,i){ const k=pid+':'+i; this.done = Object.assign({},this.done,{[k]:!this.done[k]}); },
+    toggleStep(pid,i){ const k=pid+':'+i; this.done = Object.assign({},this.done,{[k]:!this.done[k]});
+      try{ localStorage.setItem('huey2.startup.v1', JSON.stringify({v:1, done:this.done})); }catch(e){} },
     phaseDone(pid){
       const p=this.startup.find(x=>x.id===pid); if(!p) return 0;
       const c=p.steps.filter((s,i)=>this.done[pid+':'+i]).length;
@@ -1540,7 +1558,7 @@ const app = Vue.createApp({
         navigator.clipboard.writeText(plain).catch(()=>{});
       }
     },
-    resetChecks(){ this.done={}; },
+    resetChecks(){ this.done={}; try{ localStorage.setItem('huey2.startup.v1', JSON.stringify({v:1, done:this.done})); }catch(e){} },
     weatherSearch(){
       const q = String(this.weather.query || '').trim();
       this.weather.airports = [];
