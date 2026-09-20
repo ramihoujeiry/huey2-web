@@ -1,4 +1,13 @@
 {
+  "name": "huey2-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HUEY2 — UH-1 Performance & Balance PWA (zero-build static app)",
+  "scripts": {
+    "start": "node serve.js",
+    "test": "node test_xss_escape.js && node tests/bugfix-regression.js && node tests/dom-smoke.js",
+    "test:xss": "node test_xss_escape.js"
+  },
   "devDependencies": {
     "jsdom": "^30.0.1",
     "playwright": "^1.55.0"
